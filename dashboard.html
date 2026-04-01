@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPU Provider Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-0: #0f1a1f;
+      --bg-1: #152a33;
+      --bg-2: #1c3944;
+      --ink: #ebf4f1;
+      --muted: #a8c3bd;
+      --accent: #ff7a18;
+      --accent-2: #00d1b2;
+      --warn: #ffd166;
+      --danger: #f25f5c;
+      --card: rgba(18, 37, 45, 0.82);
+      --line: rgba(255, 255, 255, 0.14);
+      --chip: rgba(255, 255, 255, 0.1);
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Space Grotesk", sans-serif;
+      background:
+        radial-gradient(circle at 10% 20%, #254a59 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, #3c2f1c 0%, transparent 32%),
+        linear-gradient(135deg, var(--bg-0), var(--bg-1) 45%, var(--bg-2));
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      animation: fadeIn 0.8s ease;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+      background: linear-gradient(120deg, rgba(255, 122, 24, 0.22), rgba(0, 209, 178, 0.15));
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.4rem, 2vw, 2rem);
+      line-height: 1.2;
+      letter-spacing: 0.3px;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .controls {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .role-btn {
+      border: 1px solid var(--line);
+      background: rgba(7, 15, 20, 0.48);
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .role-btn:hover,
+    .role-btn.active {
+      transform: translateY(-1px);
+      border-color: rgba(255, 122, 24, 0.95);
+      background: rgba(255, 122, 24, 0.18);
+    }
+
+    .filters {
+      margin: 16px 0;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+    }
+
+    .filters select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: rgba(11, 22, 27, 0.75);
+      padding: 9px 10px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.8rem;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(8, 20, 25, 0.68);
+      box-shadow: var(--shadow);
+    }
+
+    .label {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .value {
+      margin-top: 4px;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      transform: translateY(10px);
+      opacity: 0;
+      animation: slideIn 0.4s ease forwards;
+    }
+
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      line-height: 1.25;
+    }
+
+    .provider {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-bottom: 10px;
+    }
+
+    .score {
+      font-family: "IBM Plex Mono", monospace;
+      color: #ffecc7;
+      font-size: 0.79rem;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: grid;
+      gap: 7px;
+      font-size: 0.86rem;
+      margin-bottom: 10px;
+    }
+
+    .row b {
+      color: #d7ede8;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      font-size: 0.72rem;
+    }
+
+    .chip.good { border-color: rgba(0, 209, 178, 0.55); }
+    .chip.warn { border-color: rgba(255, 209, 102, 0.55); }
+    .chip.bad { border-color: rgba(242, 95, 92, 0.55); }
+
+    .links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .links a {
+      color: #fff2df;
+      text-decoration: none;
+      border: 1px solid rgba(255, 122, 24, 0.55);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 0.77rem;
+      transition: background 0.2s ease;
+    }
+
+    .links a:hover {
+      background: rgba(255, 122, 24, 0.22);
+    }
+
+    .status {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 900px) {
+      .filters { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+      .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .stat-row { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      body { padding: 12px; }
+      .hero { padding: 16px; }
+      .filters,
+      .controls,
+      .stat-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>GPU Provider Role Dashboard</h1>
+      <p class="sub">Pick your profile, then compare free-tier access, compute budget, and practical constraints like card requirement, API, and Docker support.</p>
+      <div class="controls" id="roleButtons"></div>
+    </section>
+
+    <section class="filters">
+      <select id="cardFilter" aria-label="Credit card filter">
+        <option value="all">Card: All</option>
+        <option value="no">No Card</option>
+        <option value="yes">Card Needed</option>
+        <option value="depends">Depends / Mixed</option>
+      </select>
+      <select id="apiFilter" aria-label="API filter">
+        <option value="all">API: All</option>
+        <option value="yes">API Available</option>
+        <option value="no">No API</option>
+      </select>
+      <select id="dockerFilter" aria-label="Docker filter">
+        <option value="all">Docker: All</option>
+        <option value="yes">Docker Support</option>
+        <option value="no">No Docker</option>
+      </select>
+      <select id="typeFilter" aria-label="Tier filter">
+        <option value="all">Tier Type: All</option>
+        <option value="free">Free Tier</option>
+        <option value="credits">Credits</option>
+        <option value="grant">Grant / Program</option>
+      </select>
+      <select id="sortBy" aria-label="Sort options">
+        <option value="score">Sort: Best Fit</option>
+        <option value="compute">Sort: Compute Budget</option>
+        <option value="name">Sort: Service Name</option>
+      </select>
+    </section>
+
+    <section class="stat-row" id="stats"></section>
+    <section class="grid" id="cards"></section>
+
+    <p class="status" id="status"></p>
+  </main>
+
+  <script>
+    const DATA_FILE = "gpu_compute_database - Database.csv";
+
+    const roles = [
+      { id: "student", label: "1 Student" },
+      { id: "researcher", label: "2 Researcher" },
+      { id: "founder", label: "3 Founder" },
+      { id: "other", label: "4 Other" }
+    ];
+
+    const state = {
+      role: "student",
+      rows: [],
+      filtered: []
+    };
+
+    init();
+
+    async function init() {
+      renderRoleButtons();
+      bindFilters();
+      try {
+        const csv = await fetch(DATA_FILE).then((r) => {
+          if (!r.ok) throw new Error("Could not load CSV file");
+          return r.text();
+        });
+        state.rows = parseCsv(csv).map(enrichRow);
+        applyAndRender();
+      } catch (err) {
+        document.getElementById("status").textContent = "CSV could not be loaded. If you opened this as a file directly, run a local server (for example: python -m http.server) and open dashboard.html through localhost.";
+        console.error(err);
+      }
+    }
+
+    function renderRoleButtons() {
+      const host = document.getElementById("roleButtons");
+      host.innerHTML = "";
+      roles.forEach((role) => {
+        const btn = document.createElement("button");
+        btn.className = "role-btn" + (role.id === state.role ? " active" : "");
+        btn.textContent = role.label;
+        btn.type = "button";
+        btn.onclick = () => {
+          state.role = role.id;
+          renderRoleButtons();
+          applyAndRender();
+        };
+        host.appendChild(btn);
+      });
+    }
+
+    function bindFilters() {
+      ["cardFilter", "apiFilter", "dockerFilter", "typeFilter", "sortBy"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", applyAndRender);
+      });
+    }
+
+    function applyAndRender() {
+      const cardFilter = document.getElementById("cardFilter").value;
+      const apiFilter = document.getElementById("apiFilter").value;
+      const dockerFilter = document.getElementById("dockerFilter").value;
+      const typeFilter = document.getElementById("typeFilter").value;
+      const sortBy = document.getElementById("sortBy").value;
+
+      let rows = state.rows
+        .map((r) => ({ ...r, score: scoreForRole(r, state.role) }))
+        .filter((r) => passesFilter(r, cardFilter, apiFilter, dockerFilter, typeFilter));
+
+      if (sortBy === "score") rows.sort((a, b) => b.score - a.score || a.service.localeCompare(b.service));
+      if (sortBy === "compute") rows.sort((a, b) => b.computeScore - a.computeScore || b.score - a.score);
+      if (sortBy === "name") rows.sort((a, b) => a.service.localeCompare(b.service));
+
+      state.filtered = rows;
+      renderStats(rows);
+      renderCards(rows);
+
+      const top = rows[0];
+      document.getElementById("status").textContent = rows.length
+        ? "Showing " + rows.length + " providers for " + labelForRole(state.role) + ". Top fit right now: " + top.service + "."
+        : "No providers match these filters. Relax one filter to see more options.";
+    }
+
+    function renderStats(rows) {
+      const host = document.getElementById("stats");
+      const noCard = rows.filter((r) => lower(r.card).includes("no")).length;
+      const withApi = rows.filter((r) => lower(r.api).includes("yes")).length;
+      const freeTier = rows.filter((r) => lower(r.freeTier).includes("free")).length;
+      const grantProgram = rows.filter((r) => /(grant|program|application)/i.test(r.freeTier + " " + r.category)).length;
+
+      host.innerHTML = [
+        statHtml("Providers", rows.length),
+        statHtml("No Card", noCard),
+        statHtml("API Available", withApi),
+        statHtml("Free or Grant", freeTier + grantProgram)
+      ].join("");
+    }
+
+    function renderCards(rows) {
+      const host = document.getElementById("cards");
+      host.innerHTML = rows.map((r, idx) => {
+        const delay = Math.min(idx * 40, 400);
+        return "<article class=\"card\" style=\"animation-delay:" + delay + "ms\">"
+          + "<h3>" + escapeHtml(r.service) + "</h3>"
+          + "<div class=\"provider\">" + escapeHtml(r.provider) + " | " + escapeHtml(r.category) + "</div>"
+          + "<div class=\"score\">Fit Score: " + r.score + " | Compute Signal: " + r.computeScore + "</div>"
+          + "<div class=\"chips\">"
+          + chipHtml("Card: " + shortValue(r.card), chipClassForCard(r.card))
+          + chipHtml("API: " + shortValue(r.api), lower(r.api).includes("yes") ? "good" : "warn")
+          + chipHtml("Docker: " + shortValue(r.docker), lower(r.docker).includes("yes") ? "good" : "warn")
+          + chipHtml("Region: " + shortValue(r.region), "")
+          + "</div>"
+          + "<div class=\"row\">"
+          + "<div><b>GPU / Compute:</b> " + escapeHtml(r.compute) + "</div>"
+          + "<div><b>VRAM:</b> " + escapeHtml(r.vram) + "</div>"
+          + "<div><b>Budget:</b> " + escapeHtml(r.maxHours) + "</div>"
+          + "<div><b>Free Tier Type:</b> " + escapeHtml(r.freeTier) + "</div>"
+          + "</div>"
+          + "<div class=\"links\">"
+          + safeLink(r.signup, "Signup")
+          + safeLink(r.source, "Source")
+          + "</div>"
+          + "</article>";
+      }).join("");
+    }
+
+    function statHtml(label, value) {
+      return "<div class=\"stat\"><div class=\"label\">" + label + "</div><div class=\"value\">" + value + "</div></div>";
+    }
+
+    function chipHtml(text, kind) {
+      return "<span class=\"chip " + kind + "\">" + escapeHtml(text) + "</span>";
+    }
+
+    function safeLink(url, text) {
+      if (!url || !/^https?:\/\//i.test(url)) return "";
+      return "<a href=\"" + escapeHtml(url) + "\" target=\"_blank\" rel=\"noreferrer noopener\">" + text + "</a>";
+    }
+
+    function passesFilter(r, cardFilter, apiFilter, dockerFilter, typeFilter) {
+      const card = lower(r.card);
+      const api = lower(r.api);
+      const docker = lower(r.docker);
+      const tier = lower(r.freeTier + " " + r.category);
+
+      if (cardFilter === "no" && !card.includes("no")) return false;
+      if (cardFilter === "yes" && !card.includes("yes")) return false;
+      if (cardFilter === "depends" && !(card.includes("depends") || card.includes("varies") || card.includes("mixed"))) return false;
+
+      if (apiFilter === "yes" && !api.includes("yes")) return false;
+      if (apiFilter === "no" && api.includes("yes")) return false;
+
+      if (dockerFilter === "yes" && !docker.includes("yes")) return false;
+      if (dockerFilter === "no" && docker.includes("yes")) return false;
+
+      if (typeFilter === "free" && !tier.includes("free")) return false;
+      if (typeFilter === "credits" && !(tier.includes("credit") || tier.includes("trial"))) return false;
+      if (typeFilter === "grant" && !(tier.includes("grant") || tier.includes("program") || tier.includes("application"))) return false;
+
+      return true;
+    }
+
+    function scoreForRole(r, role) {
+      const bag = lower([
+        r.service,
+        r.provider,
+        r.category,
+        r.freeTier,
+        r.maxHours,
+        r.auth,
+        r.card,
+        r.notes,
+        r.compute
+      ].join(" | "));
+
+      let score = 20;
+      if (bag.includes("free")) score += 10;
+      if (bag.includes("credit")) score += 5;
+      if (bag.includes("no" + " card") || bag.includes("no,")) score += 5;
+      if (bag.includes("gpu")) score += 6;
+      if (r.computeScore >= 60) score += 12;
+
+      if (role === "student") {
+        if (/student|educate|notebook|kaggle|colab|studiolab|azure for students|github student/i.test(bag)) score += 45;
+        if (/no card|no\b/.test(lower(r.card))) score += 18;
+        if (/grant|proposal/.test(bag)) score -= 8;
+      }
+
+      if (role === "researcher") {
+        if (/research|hpc|grant|allocation|proposal|eurohpc|nsf|doe|academic|university|pilot/i.test(bag)) score += 50;
+        if (/10,000 gpu hours|allocation|supercomputer|director's discretionary|incite/i.test(bag)) score += 25;
+      }
+
+      if (role === "founder") {
+        if (/startup|founder|activate|program credits|cloud trial|microsoft for startups|aws activate|google for startups|runpod startup|ovhcloud startup/i.test(bag)) score += 52;
+        if (/api|serverless|automation|modal/i.test(bag)) score += 10;
+      }
+
+      if (role === "other") {
+        if (/free tier|trial|credits|pay-as-you-go|marketplace|global/i.test(bag)) score += 25;
+      }
+
+      return Math.max(1, Math.min(100, score));
+    }
+
+    function enrichRow(r) {
+      const computeSignal = lower([r.compute, r.maxHours, r.freeTier, r.notes, r.vram].join(" | "));
+      let computeScore = 15;
+
+      if (/h100|a100|mi300x|h200/.test(computeSignal)) computeScore += 30;
+      if (/t4|l4|a10g|v100/.test(computeSignal)) computeScore += 16;
+      if (/gpu hours|hours|30 h\/week|10,000/.test(computeSignal)) computeScore += 24;
+      if (/credit|\$\d+|starter/.test(computeSignal)) computeScore += 14;
+      if (/cpu only/.test(computeSignal)) computeScore -= 15;
+      if (/n\/a|varies/.test(computeSignal)) computeScore -= 5;
+
+      return {
+        service: r["Service"] || "Unknown",
+        provider: r["Provider"] || "Unknown",
+        category: r["Category"] || "Unknown",
+        compute: r["GPU / Compute"] || "N/A",
+        vram: r["VRAM"] || "N/A",
+        freeTier: r["Free Tier Type"] || "N/A",
+        maxHours: r["Max GPU Hours / Credits"] || "N/A",
+        auth: r["Authentication"] || "N/A",
+        card: r["Credit Card Required"] || "N/A",
+        docker: r["Docker Support"] || "N/A",
+        api: r["API Available"] || "N/A",
+        region: r["Region"] || "N/A",
+        signup: r["Signup Link"] || "",
+        source: r["Source URL"] || "",
+        notes: r["Notes"] || "",
+        computeScore: Math.max(1, Math.min(100, computeScore))
+      };
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+
+        if (char === ',' && !inQuotes) {
+          row.push(cell.trim());
+          cell = "";
+          continue;
+        }
+
+        if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(cell.trim());
+          if (row.length > 1 || row[0] !== "") rows.push(row);
+          row = [];
+          cell = "";
+          continue;
+        }
+
+        cell += char;
+      }
+
+      if (cell || row.length) {
+        row.push(cell.trim());
+        rows.push(row);
+      }
+
+      const header = rows[0] || [];
+      return rows.slice(1).map((r) => {
+        const obj = {};
+        for (let i = 0; i < header.length; i++) {
+          obj[header[i]] = r[i] || "";
+        }
+        return obj;
+      });
+    }
+
+    function labelForRole(id) {
+      const role = roles.find((r) => r.id === id);
+      return role ? role.label : id;
+    }
+
+    function lower(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function shortValue(value) {
+      const text = String(value || "N/A");
+      return text.length > 26 ? text.slice(0, 23) + "..." : text;
+    }
+
+    function chipClassForCard(value) {
+      const txt = lower(value);
+      if (txt.includes("no")) return "good";
+      if (txt.includes("yes")) return "bad";
+      return "warn";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
