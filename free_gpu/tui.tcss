@@ -1,0 +1,107 @@
+Screen {
+    background: #171b26;
+    color: #d6d7f0;
+}
+
+#system-bar {
+    height: 4;
+    margin: 1 1 0 1;
+    padding: 0 1;
+    border: heavy #4b4f73;
+    background: #1d2130;
+    color: #d6d7f0;
+}
+
+#filters-bar {
+    height: 5;
+    margin: 1 1 0 1;
+    padding: 0 1;
+    border: heavy #4b4f73;
+    background: #1d2130;
+    align-vertical: middle;
+}
+
+#filters-bar > * {
+    margin: 0 1 0 0;
+}
+
+#search {
+    width: 1fr;
+    height: 3;
+}
+
+#role, #workload, #budget, #access, #no-card {
+    min-width: 16;
+    width: auto;
+    height: 3;
+}
+
+#providers-table {
+    margin: 1 1 0 1;
+    height: 1fr;
+    border: heavy #4b4f73;
+    background: #1d2130;
+}
+
+#status-bars {
+    height: 7;
+    margin: 1 1 0 1;
+}
+
+#selection-bar, #flow-bar {
+    border: heavy #4b4f73;
+    background: #1d2130;
+    padding: 0 1;
+    color: #d6d7f0;
+    height: 1fr;
+}
+
+#selection-bar {
+    width: 2fr;
+    margin-right: 1;
+}
+
+#flow-bar {
+    width: 1fr;
+}
+
+DataTable {
+    background: #1d2130;
+    color: #d6d7f0;
+}
+
+DataTable > .datatable--header {
+    background: #23283a;
+    color: #8ad4ff;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #d5a9ff;
+    color: #11131b;
+}
+
+Input {
+    background: #23283a;
+    color: #d6d7f0;
+    border: tall #4b4f73;
+}
+
+Button {
+    background: #23283a;
+    color: #8ad4ff;
+    border: tall #4b4f73;
+    text-style: bold;
+}
+
+Button:focus {
+    background: #d5a9ff;
+    color: #11131b;
+}
+
+#help-bar {
+    height: 1;
+    margin: 0 1 1 1;
+    color: #8ea9b7;
+    background: #171b26;
+}
