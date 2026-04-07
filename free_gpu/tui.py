@@ -21,10 +21,10 @@ WORKLOAD_OPTIONS = [
     ("Eval", "batch-eval"),
     ("Agent", "agent-loop"),
 ]
-BUDGET_OPTIONS = [("Budget Any", "any"), ("Free", "free"), ("<$10", "under-10"), ("<$25", "under-25"), ("Flexible", "flexible")]
-ROLE_OPTIONS = [("Student", "student"), ("Researcher", "researcher"), ("Founder", "founder"), ("Other", "other")]
+BUDGET_OPTIONS = [("Budget Any", "any"), ("Free", "free"), ("<10", "under-10"), ("<25", "under-25"), ("Grant", "grant")]
+ROLE_OPTIONS = [("Student", "student"), ("Researcher", "researcher"), ("Founder", "founder")]
 ROLE_ANY_OPTIONS = [("Role Any", "any")] + ROLE_OPTIONS
-ACCESS_OPTIONS = [("Access Any", "any"), ("Fast start", "urgent"), ("Can wait", "flexible")]
+PAYMENT_OPTIONS = [("Payment Option", "any"), ("Card Req", "card_req"), ("No Card", "no_card")]
 
 
 class FreeGpuApp(App):
@@ -44,8 +44,7 @@ class FreeGpuApp(App):
         self.workload_idx = 0
         self.role_idx = 0
         self.budget_idx = 0
-        self.deadline_idx = 0
-        self.no_card_only = False
+        self.payment_idx = 0
 
     def compose(self) -> ComposeResult:
         yield Static("", id="system-bar")
@@ -54,8 +53,7 @@ class FreeGpuApp(App):
             Button("", id="role"),
             Button("", id="workload"),
             Button("", id="budget"),
-            Button("", id="access"),
-            Button("", id="no-card"),
+            Button("", id="payment"),
             id="filters-bar",
         )
         yield DataTable(id="providers-table")
@@ -70,7 +68,7 @@ class FreeGpuApp(App):
         table = self.query_one("#providers-table", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns(" ", "Service", "Provider", "Use Case", "Rec", "Fit", "Compute", "Card", "API", "Tier")
+        table.add_columns(" ", "Service", "Provider", "Use Case", "Recommendation", "Compute", "Card Req", "Tier")
         self._refresh_filter_labels()
         self.refresh_local_profile()
         self.refresh_plan()
@@ -102,7 +100,7 @@ class FreeGpuApp(App):
         self._update_selection_bar(0)
         self._update_flow_bar(plan)
         self.query_one("#help-bar", Static).update(
-            "Tab moves focus. Enter or click cycles a filter. Access means how quickly you need access. Arrows move in the table. r reloads llmfit. q quits."
+            "Tab moves focus. Enter or click cycles a filter. Arrows move in the table. r reloads llmfit. q quits."
         )
 
     def _apply_search_filters(self, ranked: list[RankedProvider]) -> list[RankedProvider]:
@@ -127,11 +125,9 @@ class FreeGpuApp(App):
         ranked: list[RankedProvider] = []
 
         for provider in self.provider_records:
-            if self.no_card_only and not self._provider_no_card(provider):
+            if not self._provider_matches_payment(provider, PAYMENT_OPTIONS[self.payment_idx][1]):
                 continue
             if not self._provider_matches_budget(provider, request.budget):
-                continue
-            if not self._provider_matches_access(provider, ACCESS_OPTIONS[self.deadline_idx][1]):
                 continue
             if ui_workload != "all" and not self._provider_matches_workload(provider, ui_workload):
                 continue
@@ -154,6 +150,7 @@ class FreeGpuApp(App):
                     free_tier=provider.free_tier,
                     compute=provider.compute,
                     notes=provider.notes,
+                    credit_card_required=provider.credit_card_required,
                 )
             )
 
@@ -173,10 +170,8 @@ class FreeGpuApp(App):
             self.workload_idx = (self.workload_idx + 1) % len(WORKLOAD_OPTIONS)
         elif button_id == "budget":
             self.budget_idx = (self.budget_idx + 1) % len(BUDGET_OPTIONS)
-        elif button_id == "access":
-            self.deadline_idx = (self.deadline_idx + 1) % len(ACCESS_OPTIONS)
-        elif button_id == "no-card":
-            self.no_card_only = not self.no_card_only
+        elif button_id == "payment":
+            self.payment_idx = (self.payment_idx + 1) % len(PAYMENT_OPTIONS)
         else:
             return
         self._refresh_filter_labels()
@@ -191,8 +186,7 @@ class FreeGpuApp(App):
         selected_workload = WORKLOAD_OPTIONS[self.workload_idx][1]
         request.workload = "inference" if selected_workload == "all" else selected_workload
         request.budget = BUDGET_OPTIONS[self.budget_idx][1]
-        selected_deadline = ACCESS_OPTIONS[self.deadline_idx][1]
-        request.deadline = "flexible" if selected_deadline == "any" else selected_deadline
+        request.deadline = "flexible"
         request.requires_api = False
         request.prefer_local = True
         return request
@@ -201,8 +195,7 @@ class FreeGpuApp(App):
         self.query_one("#role", Button).label = ROLE_ANY_OPTIONS[self.role_idx][0]
         self.query_one("#workload", Button).label = WORKLOAD_OPTIONS[self.workload_idx][0]
         self.query_one("#budget", Button).label = BUDGET_OPTIONS[self.budget_idx][0]
-        self.query_one("#access", Button).label = ACCESS_OPTIONS[self.deadline_idx][0]
-        self.query_one("#no-card", Button).label = "No card" if self.no_card_only else "Card any"
+        self.query_one("#payment", Button).label = PAYMENT_OPTIONS[self.payment_idx][0]
 
     def _render_table(self, ranked: list[RankedProvider], plan) -> None:
         table = self.query_one("#providers-table", DataTable)
@@ -210,17 +203,14 @@ class FreeGpuApp(App):
         for index, provider in enumerate(ranked, start=1):
             ui_workload = WORKLOAD_OPTIONS[self.workload_idx][1]
             use_case = self._use_case_for(ui_workload)
-            fit = self._fit_label(plan.local_verdict, plan, provider)
             table.add_row(
-                self._indicator_for(fit),
+                self._indicator_for(provider.score),
                 provider.service[:28],
                 provider.provider[:10],
                 use_case,
                 self._recommendation_label(provider.score),
-                fit,
                 self._truncate(provider.compute, 16),
                 self._card_label(provider),
-                self._api_label(provider),
                 self._tier_label(provider),
             )
         if ranked:
@@ -237,7 +227,6 @@ class FreeGpuApp(App):
             f"Recommendation {self._recommendation_label(provider.score)}  "
             f"Type {provider.category}  "
             f"Card {self._card_label(provider)}  "
-            f"API {self._api_label(provider)}  "
             f"Tier {self._tier_label(provider)}\n"
             f"{provider.reason}\n"
             f"Signup: {self._link(provider.signup_link)}\n"
@@ -252,8 +241,7 @@ class FreeGpuApp(App):
                 "[b]Full provider list[/b]",
                 f"Role ranking: {ROLE_ANY_OPTIONS[self.role_idx][0]}",
                 "Showing all providers by default.",
-                "Card, Budget, Work, and Access now hide non-matching providers.",
-                "Access = how quickly you need access: Fast start hides grants and application-based programs.",
+                "Payment, Budget, and Work now hide non-matching providers.",
             ]
             self.query_one("#flow-bar", Static).update("\n".join(lines))
             return
@@ -299,11 +287,11 @@ class FreeGpuApp(App):
 
     @staticmethod
     def _indicator_for(fit: str) -> str:
-        if fit == "Perfect":
+        if fit >= 90:
             return "●"
-        if fit == "Good":
+        if fit >= 70:
             return "●"
-        if fit == "Hybrid":
+        if fit >= 50:
             return "◐"
         return "○"
 
@@ -319,28 +307,17 @@ class FreeGpuApp(App):
         return "Mixed"
 
     @staticmethod
-    def _api_label(provider: RankedProvider) -> str:
-        haystack = f"{provider.reason} {provider.compute} {provider.notes}".lower()
-        return "Yes" if "api" in haystack else "No"
-
-    @staticmethod
     def _card_label(provider: RankedProvider) -> str:
-        text = f"{provider.reason} {provider.notes} {provider.free_tier}".lower()
-        if "no card" in text:
-            return "No"
-        return "Maybe"
-
-    @staticmethod
-    def _fit_label(local_verdict: str, plan, provider: RankedProvider) -> str:
-        if plan.request.workload == "inference" and local_verdict == "good-local":
-            return "Perfect"
-        if any(step.recommended_environment == "hybrid" for step in plan.workflow_steps):
-            return "Hybrid"
-        if any(step.recommended_environment == "remote" for step in plan.workflow_steps):
-            return "Remote"
-        if provider.score >= 90:
-            return "Good"
-        return "Marginal"
+        if FreeGpuApp._is_grant_like(provider):
+            return "Card Req"
+        card = provider.credit_card_required.lower()
+        if "no" in card:
+            return "No Card Req"
+        if "yes" in card:
+            return "Card Req"
+        if "depends" in card:
+            return "Maybe Card"
+        return provider.credit_card_required or "Unknown"
 
     @staticmethod
     def _provider_has_api(provider) -> bool:
@@ -348,30 +325,53 @@ class FreeGpuApp(App):
         return "yes" in getattr(provider, "api_available", "").lower() or "api" in text or "cluster apis" in text
 
     @staticmethod
-    def _provider_no_card(provider) -> bool:
-        return "no" in getattr(provider, "credit_card_required", "").lower()
+    def _provider_matches_payment(provider, payment_mode: str) -> bool:
+        if FreeGpuApp._is_grant_like(provider):
+            return payment_mode in {"any", "card_req"}
+        card = getattr(provider, "credit_card_required", "").lower()
+        if payment_mode == "any":
+            return True
+        if payment_mode == "no_card":
+            return "no" in card
+        if payment_mode == "card_req":
+            return "yes" in card or "depends" in card
+        return True
 
     @staticmethod
     def _provider_matches_budget(provider, budget: str) -> bool:
         text = provider.free_tier.lower()
+        card = getattr(provider, "credit_card_required", "").lower()
+        is_grant = FreeGpuApp._is_grant_like(provider)
         if budget == "any":
             return True
         if budget == "free":
-            return "free" in text
+            return "free" in text and not is_grant
         if budget == "under-10":
-            return "free" in text or "trial" in text or "credit" in text
+            return (
+                ("trial" in text or "credit" in text or "starter" in text or "lite" in text or "promotional" in text)
+                and "no" not in card
+                and not is_grant
+            )
         if budget == "under-25":
-            return "free" in text or "trial" in text or "credit" in text or "grant" in text or "program" in text
+            return (
+                (
+                    "trial" in text
+                    or "credit" in text
+                    or "starter" in text
+                    or "lite" in text
+                    or "promotional" in text
+                )
+                and "no" not in card
+                and not is_grant
+            )
+        if budget == "grant":
+            return is_grant
         return True
 
     @staticmethod
-    def _provider_matches_access(provider, access: str) -> bool:
-        bag = " ".join([provider.category, provider.free_tier, provider.notes]).lower()
-        if access == "urgent":
-            return not any(token in bag for token in ("grant", "application", "proposal", "allocation", "academic"))
-        if access == "flexible":
-            return any(token in bag for token in ("grant", "application", "proposal", "allocation", "academic", "research"))
-        return True
+    def _is_grant_like(provider) -> bool:
+        text = f"{provider.free_tier} {provider.category} {provider.notes}".lower()
+        return any(token in text for token in ("grant", "program", "application", "allocation"))
 
     @staticmethod
     def _provider_matches_workload(provider, workload: str) -> bool:

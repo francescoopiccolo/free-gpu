@@ -80,6 +80,7 @@ class RankedProvider:
     free_tier: str
     compute: str
     notes: str
+    credit_card_required: str
 
     def to_dict(self) -> dict:
         return asdict(self)

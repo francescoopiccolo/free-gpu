@@ -65,6 +65,7 @@ def rank_providers(
                 free_tier=provider.free_tier,
                 compute=provider.compute,
                 notes=provider.notes,
+                credit_card_required=provider.credit_card_required,
             )
         )
     ranked.sort(key=lambda item: (-item.score, item.service.lower()))
