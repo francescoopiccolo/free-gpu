@@ -263,34 +263,6 @@
         <a class="button primary" href="https://github.com/francescoopiccolo/free-gpu">View repository</a>
         <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/README.md">Read the README</a>
       </div>
-
-      <div class="hero-grid">
-        <div class="panel">
-          <h2>How the workflow planner thinks</h2>
-          <p>
-            The planner estimates the compute lane from workload, model size, target VRAM, job duration, and parallelism.
-            It then schedules different provider types per stage instead of treating every task like the same generic ranking problem.
-          </p>
-          <ul>
-            <li><strong>Burst lane</strong> for quick inference, demos, and short exploratory runs.</li>
-            <li><strong>Session lane</strong> for longer notebook work, eval loops, and moderate fine-tunes.</li>
-            <li><strong>Heavy lane</strong> for bigger VRAM asks or longer sustained runs.</li>
-            <li><strong>Grant-scale lane</strong> for tasks that look more like allocations, credits, or formal programs than casual free-tier use.</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h2>What ships in the repo</h2>
-          <ul>
-            <li>CLI and Textual TUI for provider planning.</li>
-            <li>CSV-backed provider dataset and scoring heuristics.</li>
-            <li>MCP server so agents can ask for provider plans programmatically.</li>
-            <li>Role-aware ranking lenses for student, researcher, and founder contexts.</li>
-          </ul>
-          <p class="fine">
-            The planner keeps product semantics on purpose: role is a ranking lens, grants behave like a card-required lane, and budget buckets are UX buckets rather than literal accounting truth.
-          </p>
-        </div>
-      </div>
     </section>
 
     <section class="section">
