@@ -11,7 +11,7 @@ from .planner import build_plan, rank_providers
 
 
 WORKLOAD_CHOICES = ["scratch-train", "finetune-lora", "inference", "batch-eval", "agent-loop"]
-BUDGET_CHOICES = ["free", "under-10", "under-25", "flexible"]
+BUDGET_CHOICES = ["any", "free", "under-25", "grant"]
 DEADLINE_CHOICES = ["flexible", "urgent"]
 
 
@@ -47,6 +47,9 @@ def _add_shared_request_args(parser: argparse.ArgumentParser, *, workload_requir
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--deadline", default="flexible", choices=DEADLINE_CHOICES)
     parser.add_argument("--requires-api", action="store_true")
+    parser.add_argument("--task-hours", type=float, default=1.0, help="Estimated runtime for the task or longest stage.")
+    parser.add_argument("--min-vram-gb", type=float, help="Minimum remote VRAM you want the workflow to target.")
+    parser.add_argument("--parallel-jobs", type=int, default=1, help="How many jobs may need to run at once.")
     parser.add_argument("--prefer-cloud", action="store_true", help="Prefer remote recommendations over local-first output.")
 
 
@@ -81,6 +84,9 @@ def main(argv: list[str] | None = None) -> int:
                 prefer_local=not args.prefer_cloud,
                 requires_api=args.requires_api,
                 deadline=args.deadline,
+                task_hours=args.task_hours,
+                min_vram_gb=args.min_vram_gb,
+                parallel_jobs=args.parallel_jobs,
             ),
             manual_hardware={
                 "ram_gb": args.ram_gb,
@@ -111,6 +117,9 @@ def main(argv: list[str] | None = None) -> int:
         prefer_local=not args.prefer_cloud,
         requires_api=args.requires_api,
         deadline=args.deadline,
+        task_hours=args.task_hours,
+        min_vram_gb=args.min_vram_gb,
+        parallel_jobs=args.parallel_jobs,
     )
 
     if args.command == "providers":
@@ -162,6 +171,8 @@ def _print_plan(plan) -> None:
     print(f"  workload: {plan.request.workload}")
     print(f"  model: {plan.request.model or 'unspecified'}")
     print(f"  local verdict: {plan.local_verdict}")
+    print(f"  compute lane: {plan.compute_need.lane}")
+    print(f"  compute summary: {plan.compute_need.summary}")
     print(f"  summary: {plan.summary}")
     print()
 
@@ -180,6 +191,8 @@ def _print_plan(plan) -> None:
     print("Workflow")
     for step in plan.workflow_steps:
         print(f"  - {step.stage}: {step.recommended_environment}")
+        if step.compute_need:
+            print(f"    compute: {step.compute_need.summary}")
         print(f"    {step.reason}")
         for blocker in step.blockers:
             print(f"    blocker: {blocker}")

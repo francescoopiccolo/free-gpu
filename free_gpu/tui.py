@@ -21,7 +21,7 @@ WORKLOAD_OPTIONS = [
     ("Eval", "batch-eval"),
     ("Agent", "agent-loop"),
 ]
-BUDGET_OPTIONS = [("Budget Any", "any"), ("Free", "free"), ("<10", "under-10"), ("<25", "under-25"), ("Grant", "grant")]
+BUDGET_OPTIONS = [("Budget Any", "any"), ("Free", "free"), ("<25", "under-25"), ("Grant", "grant")]
 ROLE_OPTIONS = [("Student", "student"), ("Researcher", "researcher"), ("Founder", "founder")]
 ROLE_ANY_OPTIONS = [("Role Any", "any")] + ROLE_OPTIONS
 PAYMENT_OPTIONS = [("Payment Option", "any"), ("Card Req", "card_req"), ("No Card", "no_card")]
@@ -240,17 +240,22 @@ class FreeGpuApp(App):
             lines = [
                 "[b]Full provider list[/b]",
                 f"Role ranking: {ROLE_ANY_OPTIONS[self.role_idx][0]}",
+                f"Compute lane: {plan.compute_need.lane}",
                 "Showing all providers by default.",
                 "Payment, Budget, and Work now hide non-matching providers.",
             ]
             self.query_one("#flow-bar", Static).update("\n".join(lines))
             return
         lines = [
+            f"[b]Compute[/b] {plan.compute_need.summary}",
             f"[b]Local[/b] {plan.local_verdict}",
             plan.summary,
         ]
         for step in plan.workflow_steps[:3]:
-            lines.append(f"{step.stage}: {step.recommended_environment}")
+            if step.compute_need:
+                lines.append(f"{step.stage}: {step.compute_need.lane} -> {step.recommended_environment}")
+            else:
+                lines.append(f"{step.stage}: {step.recommended_environment}")
         self.query_one("#flow-bar", Static).update("\n".join(lines))
 
     def _system_bar_text(self, profile: LocalCapabilityProfile) -> str:
@@ -346,12 +351,6 @@ class FreeGpuApp(App):
             return True
         if budget == "free":
             return "free" in text and not is_grant
-        if budget == "under-10":
-            return (
-                ("trial" in text or "credit" in text or "starter" in text or "lite" in text or "promotional" in text)
-                and "no" not in card
-                and not is_grant
-            )
         if budget == "under-25":
             return (
                 (

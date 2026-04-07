@@ -66,6 +66,21 @@ class WorkloadRequest:
     prefer_local: bool = True
     requires_api: bool = False
     deadline: str = "flexible"
+    task_hours: float = 1.0
+    min_vram_gb: float | None = None
+    parallel_jobs: int = 1
+
+
+@dataclass(slots=True)
+class ComputeNeed:
+    lane: str
+    summary: str
+    estimated_hours: float
+    required_vram_gb: float | None = None
+    parallel_jobs: int = 1
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass(slots=True)
@@ -91,6 +106,7 @@ class WorkflowStep:
     stage: str
     recommended_environment: str
     reason: str
+    compute_need: ComputeNeed | None = None
     suggested_providers: list[RankedProvider] = field(default_factory=list)
     blockers: list[str] = field(default_factory=list)
 
@@ -99,6 +115,7 @@ class WorkflowStep:
             "stage": self.stage,
             "recommended_environment": self.recommended_environment,
             "reason": self.reason,
+            "compute_need": self.compute_need.to_dict() if self.compute_need else None,
             "suggested_providers": [provider.to_dict() for provider in self.suggested_providers],
             "blockers": self.blockers,
         }
@@ -110,6 +127,7 @@ class RecommendationPlan:
     local_profile: LocalCapabilityProfile
     local_verdict: str
     summary: str
+    compute_need: ComputeNeed
     top_providers: list[RankedProvider]
     workflow_steps: list[WorkflowStep]
     blockers: list[str] = field(default_factory=list)
@@ -120,6 +138,7 @@ class RecommendationPlan:
             "local_profile": self.local_profile.to_dict(),
             "local_verdict": self.local_verdict,
             "summary": self.summary,
+            "compute_need": self.compute_need.to_dict(),
             "top_providers": [provider.to_dict() for provider in self.top_providers],
             "workflow_steps": [step.to_dict() for step in self.workflow_steps],
             "blockers": self.blockers,

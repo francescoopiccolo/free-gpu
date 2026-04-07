@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>free-gpu | Workflow planner for free and near-free compute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f6f3eb;
+      --ink: #172126;
+      --muted: #5f6a6f;
+      --line: rgba(23, 33, 38, 0.14);
+      --accent: #ff6b35;
+      --accent-soft: rgba(255, 107, 53, 0.12);
+      --teal: #0d9488;
+      --navy: #0f2740;
+      --card: rgba(255, 255, 255, 0.72);
+      --shadow: 0 18px 50px rgba(15, 39, 64, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Space Grotesk", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 107, 53, 0.14), transparent 28%),
+        radial-gradient(circle at 85% 15%, rgba(13, 148, 136, 0.12), transparent 24%),
+        linear-gradient(180deg, #fffdf8 0%, var(--paper) 100%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 28px 18px 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 32px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68)),
+        linear-gradient(120deg, rgba(255, 107, 53, 0.22), rgba(13, 148, 136, 0.1));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -60px;
+      top: -70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 107, 53, 0.22), transparent 65%);
+      pointer-events: none;
+    }
+
+    .eyebrow,
+    .pill,
+    code,
+    pre {
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 39, 64, 0.08);
+      color: var(--navy);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(2.2rem, 5vw, 4.6rem);
+      line-height: 0.94;
+      max-width: 780px;
+    }
+
+    .lede {
+      max-width: 760px;
+      font-size: 1.08rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .button.primary {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .button.secondary {
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .hero-grid,
+    .cards,
+    .examples,
+    .footer-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1.25fr 0.95fr;
+      margin-top: 28px;
+    }
+
+    .panel,
+    .card,
+    .example,
+    .footer-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel h2,
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 1.4rem;
+    }
+
+    .panel p,
+    .card p,
+    .section p,
+    .footer-card p,
+    li {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .section {
+      margin-top: 24px;
+    }
+
+    .cards,
+    .examples,
+    .footer-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card,
+    .example,
+    .footer-card {
+      padding: 20px;
+    }
+
+    .pill {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.76rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .card h3,
+    .example h3,
+    .footer-card h3 {
+      margin: 14px 0 8px;
+      font-size: 1.08rem;
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 14px 0 0;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      border-radius: 18px;
+      background: #12212c;
+      color: #eff6ff;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .footer-grid {
+      margin-top: 18px;
+    }
+
+    .fine {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .cards,
+      .examples,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">free-gpu | provider workflow planner</div>
+      <h1>Plan the right free or near-free compute path for the task in front of you.</h1>
+      <p class="lede">
+        <strong>llmfit</strong> answers what can run locally. <strong>free-gpu</strong> answers where the rest of the work should go:
+        fast free notebooks, short-lived credit buckets, or grant-style providers when the task moves into heavier territory.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="https://github.com/francescoopiccolo/free-gpu">View repository</a>
+        <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/README.md">Read the README</a>
+      </div>
+
+      <div class="hero-grid">
+        <div class="panel">
+          <h2>How the workflow planner thinks</h2>
+          <p>
+            The planner estimates the compute lane from workload, model size, target VRAM, job duration, and parallelism.
+            It then schedules different provider types per stage instead of treating every task like the same generic ranking problem.
+          </p>
+          <ul>
+            <li><strong>Burst lane</strong> for quick inference, demos, and short exploratory runs.</li>
+            <li><strong>Session lane</strong> for longer notebook work, eval loops, and moderate fine-tunes.</li>
+            <li><strong>Heavy lane</strong> for bigger VRAM asks or longer sustained runs.</li>
+            <li><strong>Grant-scale lane</strong> for tasks that look more like allocations, credits, or formal programs than casual free-tier use.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h2>What ships in the repo</h2>
+          <ul>
+            <li>CLI and Textual TUI for provider planning.</li>
+            <li>CSV-backed provider dataset and scoring heuristics.</li>
+            <li>MCP server so agents can ask for provider plans programmatically.</li>
+            <li>Role-aware ranking lenses for student, researcher, and founder contexts.</li>
+          </ul>
+          <p class="fine">
+            The planner keeps product semantics on purpose: role is a ranking lens, grants behave like a card-required lane, and budget buckets are UX buckets rather than literal accounting truth.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Compute lanes</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="pill">Burst</div>
+          <h3>Short jobs, minimal friction</h3>
+          <p>Good for small inference tasks, quick demos, and experiments where setup speed matters more than raw headroom.</p>
+        </article>
+        <article class="card">
+          <div class="pill">Session</div>
+          <h3>Credits, notebooks, medium runs</h3>
+          <p>Fits longer dev sessions, moderate eval workloads, and fine-tunes that still live in the near-free lane.</p>
+        </article>
+        <article class="card">
+          <div class="pill">Grant-scale</div>
+          <h3>Heavy tasks need a different lane</h3>
+          <p>When VRAM, hours, or persistence grow, the planner shifts toward allocation and program-style providers instead of pretending casual free tiers will cover it.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Examples</h2>
+      <div class="examples">
+        <article class="example">
+          <h3>CLI</h3>
+          <pre>free-gpu plan --workload finetune-lora ^
+  --model llama-3.1-8b ^
+  --budget under-25 ^
+  --task-hours 6 ^
+  --min-vram-gb 16</pre>
+        </article>
+        <article class="example">
+          <h3>MCP</h3>
+          <pre>{
+  "tool": "plan_provider_workflow",
+  "arguments": {
+    "workload": "agent-loop",
+    "budget": "under-25",
+    "task_hours": 3,
+    "parallel_jobs": 4,
+    "requires_api": true
+  }
+}</pre>
+        </article>
+        <article class="example">
+          <h3>UI</h3>
+          <pre>free-gpu ui --task-hours 2 --min-vram-gb 12</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Project links</h2>
+      <div class="footer-grid">
+        <article class="footer-card">
+          <h3>GitHub repository</h3>
+          <p>The source code, dataset, and current development history all live in the main repository.</p>
+          <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu">Open repo</a>
+        </article>
+        <article class="footer-card">
+          <h3>README</h3>
+          <p>The README explains local setup, budget semantics, CLI usage, and the MCP server entry point.</p>
+          <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/README.md">Open README</a>
+        </article>
+        <article class="footer-card">
+          <h3>Provider data</h3>
+          <p>The workflow engine still rests on the curated provider CSV rather than opaque benchmark data.</p>
+          <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/gpu_compute_database%20-%20Database.csv">Open dataset</a>
+        </article>
+      </div>
+      <p class="fine">
+        To publish this as GitHub Pages, point Pages at the <code>/docs</code> folder on the default branch.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

@@ -10,8 +10,12 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = ["textual>=0.80,<0.90"]
 
+[project.optional-dependencies]
+mcp = ["mcp"]
+
 [project.scripts]
 free-gpu = "free_gpu.cli:main"
+free-gpu-mcp = "free_gpu.mcp_server:main"
 
 [tool.setuptools]
 packages = ["free_gpu"]
