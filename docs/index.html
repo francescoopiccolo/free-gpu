@@ -294,24 +294,27 @@
     </section>
 
     <section class="section">
-      <h2>Compute lanes</h2>
+      <h2>Provider lanes</h2>
       <div class="cards">
         <article class="card">
-          <div class="pill">Burst</div>
+          <div class="pill">Free tier</div>
           <h3>Short jobs, minimal friction</h3>
-          <p>Good for small inference tasks, quick demos, and experiments where setup speed matters more than raw headroom.</p>
+          <p>Best for quick inference, demos, notebooks, and experiments where the goal is zero-cost access and a fast start.</p>
         </article>
         <article class="card">
-          <div class="pill">Session</div>
-          <h3>Credits, notebooks, medium runs</h3>
+          <div class="pill">Credits / under-25</div>
+          <h3>Cheap compute for medium runs</h3>
           <p>Fits longer dev sessions, moderate eval workloads, and fine-tunes that still live in the near-free lane.</p>
         </article>
         <article class="card">
-          <div class="pill">Grant-scale</div>
-          <h3>Heavy tasks need a different lane</h3>
-          <p>When VRAM, hours, or persistence grow, the planner shifts toward allocation and program-style providers instead of pretending casual free tiers will cover it.</p>
+          <div class="pill">Grant / program</div>
+          <h3>Heavy tasks need a different path</h3>
+          <p>When VRAM, hours, or persistence grow, the planner shifts toward allocations, startup programs, and research-style access instead of pretending casual free tiers will cover it.</p>
         </article>
       </div>
+      <p class="fine">
+        The internal compute lanes and the user-facing budget lanes work together: a task may look like a burst, session, heavy, or grant-scale job, while the resulting provider suggestions may come from free tiers, credit buckets, or grant-style programs.
+      </p>
     </section>
 
     <section class="section">
@@ -341,6 +344,59 @@
         <article class="example">
           <h3>UI</h3>
           <pre>free-gpu ui --task-hours 2 --min-vram-gb 12</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>How the MCP works</h2>
+      <div class="hero-grid">
+        <div class="panel">
+          <h2>Local tool, not hosted SaaS</h2>
+          <p>
+            GitHub Pages hosts the website and docs only. The actual MCP server runs locally on the user's own machine.
+            That keeps the project free for the maintainer while still making it usable from MCP-capable coding agents.
+          </p>
+          <ul>
+            <li>Install <code>free-gpu</code> and the MCP extra locally.</li>
+            <li>Run <code>free-gpu-mcp</code> on your machine.</li>
+            <li>Connect your coding agent to that local MCP server.</li>
+            <li>Let the agent ask for workflow plans, provider rankings, and compute-lane assessment.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h2>Generic agent config</h2>
+          <pre>{
+  "mcpServers": {
+    "free-gpu": {
+      "command": "free-gpu-mcp"
+    }
+  }
+}</pre>
+          <p class="fine">
+            Exact config differs by client, but the idea is the same: the agent launches the local <code>free-gpu-mcp</code> command and talks to it directly.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Example agent use</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="pill">Example</div>
+          <h3>Ask the agent a real task question</h3>
+          <p>"I need to fine-tune an 8B model for about 6 hours, I want to stay near free, and I can accept credits or trials but not a big bill."</p>
+        </article>
+        <article class="card">
+          <div class="pill">MCP call</div>
+          <h3>The agent calls the planner</h3>
+          <p>The agent can call <code>plan_provider_workflow</code> with workload, hours, VRAM target, and budget lane to get back a structured workflow.</p>
+        </article>
+        <article class="card">
+          <div class="pill">Result</div>
+          <h3>The response explains the path</h3>
+          <p>The user gets a local-vs-remote recommendation plus stage-by-stage guidance and a realistic suggestion of whether the task belongs in free tier, credits, or grants.</p>
         </article>
       </div>
     </section>
