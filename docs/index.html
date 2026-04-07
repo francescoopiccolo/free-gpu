@@ -373,37 +373,6 @@
     </section>
 
     <section class="section">
-      <h2>Examples</h2>
-      <div class="examples">
-        <article class="example">
-          <h3>CLI</h3>
-          <pre>free-gpu plan --workload finetune-lora ^
-  --model llama-3.1-8b ^
-  --budget under-25 ^
-  --task-hours 6 ^
-  --min-vram-gb 16</pre>
-        </article>
-        <article class="example">
-          <h3>MCP</h3>
-          <pre>{
-  "tool": "plan_provider_workflow",
-  "arguments": {
-    "workload": "agent-loop",
-    "budget": "under-25",
-    "task_hours": 3,
-    "parallel_jobs": 4,
-    "requires_api": true
-  }
-}</pre>
-        </article>
-        <article class="example">
-          <h3>UI</h3>
-          <pre>free-gpu ui --task-hours 2 --min-vram-gb 12</pre>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
       <h2>Project links</h2>
       <div class="footer-grid">
         <article class="footer-card">
@@ -422,9 +391,6 @@
           <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/gpu_compute_database%20-%20Database.csv">Open dataset</a>
         </article>
       </div>
-      <p class="fine">
-        To publish this as GitHub Pages, point Pages at the <code>/docs</code> folder on the default branch.
-      </p>
     </section>
   </main>
 </body>
