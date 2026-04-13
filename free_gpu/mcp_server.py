@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from .data import load_providers
@@ -40,6 +41,57 @@ def _normalize_budget(budget: str) -> str:
     return aliases.get(value, "under-25")
 
 
+def _normalize_workload(workload: str) -> str:
+    value = workload.strip().lower()
+    compact = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+    aliases = {
+        "scratch-train": "scratch-train",
+        "scratch-training": "scratch-train",
+        "scratch-training-run": "scratch-train",
+        "train": "scratch-train",
+        "training": "scratch-train",
+        "pretrain": "scratch-train",
+        "pre-training": "scratch-train",
+        "finetune-lora": "finetune-lora",
+        "fine-tune-lora": "finetune-lora",
+        "finetune": "finetune-lora",
+        "fine-tune": "finetune-lora",
+        "lora-finetune": "finetune-lora",
+        "lora-fine-tune": "finetune-lora",
+        "lora-training": "finetune-lora",
+        "inference": "inference",
+        "infer": "inference",
+        "generation": "inference",
+        "serving": "inference",
+        "serve": "inference",
+        "batch-eval": "batch-eval",
+        "batch-evaluation": "batch-eval",
+        "batch-evaluate": "batch-eval",
+        "evaluation-batch": "batch-eval",
+        "eval": "batch-eval",
+        "evaluation": "batch-eval",
+        "agent-loop": "agent-loop",
+        "agent": "agent-loop",
+        "agent-run": "agent-loop",
+        "agent-workflow": "agent-loop",
+    }
+    if compact in aliases:
+        return aliases[compact]
+
+    tokens = set(compact.split("-"))
+    if "lora" in tokens or "finetune" in tokens or ("fine" in tokens and "tune" in tokens):
+        return "finetune-lora"
+    if "agent" in tokens:
+        return "agent-loop"
+    if "batch" in tokens and ("eval" in tokens or "evaluation" in tokens):
+        return "batch-eval"
+    if "infer" in tokens or "inference" in tokens:
+        return "inference"
+    if "train" in tokens or "training" in tokens:
+        return "scratch-train"
+    return compact or "inference"
+
+
 def _build_request(
     *,
     workload: str,
@@ -55,7 +107,7 @@ def _build_request(
     limit: int,
 ) -> WorkloadRequest:
     return WorkloadRequest(
-        workload=workload,
+        workload=_normalize_workload(workload),
         model=model,
         params_b=params_b,
         budget=_normalize_budget(budget),
@@ -108,7 +160,12 @@ def _register_handlers(mcp: FastMCP) -> FastMCP:
         gpu_name: str | None = None,
         llmfit_limit: int = 5,
     ) -> dict[str, Any]:
-        """Build a compute-aware provider workflow for a task."""
+        """Build a compute-aware provider workflow for a task.
+
+        Canonical workloads are scratch-train, finetune-lora, inference,
+        batch-eval, and agent-loop. Common natural-language aliases are
+        normalized automatically.
+        """
         request = _build_request(
             workload=workload,
             model=model,
@@ -145,7 +202,12 @@ def _register_handlers(mcp: FastMCP) -> FastMCP:
         deadline: str = "flexible",
         limit: int = 5,
     ) -> list[dict[str, Any]]:
-        """Return the top providers for a compute profile without building the full workflow."""
+        """Return the top providers for a compute profile without building the full workflow.
+
+        Canonical workloads are scratch-train, finetune-lora, inference,
+        batch-eval, and agent-loop. Common natural-language aliases are
+        normalized automatically.
+        """
         request = _build_request(
             workload=workload,
             model=model,
@@ -172,7 +234,12 @@ def _register_handlers(mcp: FastMCP) -> FastMCP:
         parallel_jobs: int = 1,
         requires_api: bool = False,
     ) -> dict[str, Any]:
-        """Estimate the compute lane free-gpu will use for a task."""
+        """Estimate the compute lane free-gpu will use for a task.
+
+        Canonical workloads are scratch-train, finetune-lora, inference,
+        batch-eval, and agent-loop. Common natural-language aliases are
+        normalized automatically.
+        """
         request = _build_request(
             workload=workload,
             model=model,

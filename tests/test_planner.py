@@ -10,7 +10,7 @@ from free_gpu.cli import build_parser
 from free_gpu.data import load_providers
 from free_gpu.http_app import create_http_app
 from free_gpu.llmfit_adapter import _run_llmfit_system, load_local_profile
-from free_gpu.mcp_server import create_mcp
+from free_gpu.mcp_server import _build_request, create_mcp
 from free_gpu.models import LocalCapabilityProfile, WorkloadRequest
 from free_gpu.planner import assess_compute_need, build_plan, infer_model_size, rank_providers
 
@@ -102,6 +102,32 @@ class PlannerTests(unittest.TestCase):
             {"plan_provider_workflow", "rank_providers_for_task", "assess_task_compute"},
         )
         self.assertSetEqual(resource_uris, {"providers://snapshot"})
+
+    def test_build_request_normalizes_common_workload_aliases(self) -> None:
+        cases = {
+            "fine-tune": "finetune-lora",
+            "LoRA fine tune": "finetune-lora",
+            "training": "scratch-train",
+            "batch evaluation": "batch-eval",
+            "agent run": "agent-loop",
+            "inference": "inference",
+        }
+        for raw, expected in cases.items():
+            with self.subTest(raw=raw):
+                request = _build_request(
+                    workload=raw,
+                    model=None,
+                    params_b=None,
+                    budget="free",
+                    task_hours=1.0,
+                    min_vram_gb=None,
+                    parallel_jobs=1,
+                    requires_api=False,
+                    prefer_local=True,
+                    deadline="flexible",
+                    limit=5,
+                )
+                self.assertEqual(request.workload, expected)
 
     def test_llmfit_timeout_returns_warning(self) -> None:
         with patch("free_gpu.llmfit_adapter.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["llmfit"], timeout=15)):
