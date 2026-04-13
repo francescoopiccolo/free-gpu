@@ -8,6 +8,8 @@ from pathlib import Path
 
 from .models import LocalCapabilityProfile, LocalModelMatch
 
+LLMFIT_TIMEOUT_SECONDS = 15
+
 
 def llmfit_available() -> bool:
     return resolve_llmfit_executable() is not None
@@ -45,7 +47,7 @@ def load_local_profile(
 ) -> LocalCapabilityProfile:
     warnings: list[str] = []
     top_models: list[LocalModelMatch] = []
-    source = "manual"
+    source = "provider-first"
     system_summary = None
     detected_ram = ram_gb
     detected_vram = vram_gb
@@ -67,9 +69,12 @@ def load_local_profile(
         if rec_warning:
             warnings.append(rec_warning)
     else:
-        warnings.append("llmfit is not installed; using manual hardware values only.")
+        warnings.append("llmfit is not installed; continuing without automatic local hardware detection.")
 
-    if detected_ram is None and detected_vram is None:
+    if detected_ram is not None or detected_vram is not None or detected_gpu is not None:
+        source = "manual" if source != "llmfit" else source
+
+    if detected_ram is None and detected_vram is None and detected_gpu is None:
         warnings.append("No local hardware data was detected. Results will focus on provider planning.")
 
     return LocalCapabilityProfile(
@@ -91,10 +96,11 @@ def _run_llmfit_system(executable: str) -> tuple[dict | None, str | None]:
             check=True,
             capture_output=True,
             text=True,
+            timeout=LLMFIT_TIMEOUT_SECONDS,
         )
         payload = json.loads(proc.stdout)
         return payload, None
-    except (FileNotFoundError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+    except (FileNotFoundError, subprocess.CalledProcessError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         return None, f"Could not read llmfit system output: {exc}"
 
 
@@ -105,9 +111,10 @@ def _run_llmfit_recommendations(executable: str, limit: int) -> tuple[list[Local
             check=True,
             capture_output=True,
             text=True,
+            timeout=LLMFIT_TIMEOUT_SECONDS,
         )
         payload = json.loads(proc.stdout)
-    except (FileNotFoundError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+    except (FileNotFoundError, subprocess.CalledProcessError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         return [], f"Could not parse llmfit recommendations: {exc}"
 
     models: list[LocalModelMatch] = []

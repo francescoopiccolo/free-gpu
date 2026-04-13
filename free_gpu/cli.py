@@ -152,9 +152,12 @@ def _print_local(profile, *, as_json: bool) -> int:
     print("Local profile")
     print(f"  source: {profile.source}")
     print(f"  llmfit available: {'yes' if profile.llmfit_available else 'no'}")
-    print(f"  RAM: {_fmt_num(profile.ram_gb)}")
-    print(f"  VRAM: {_fmt_num(profile.vram_gb)}")
-    print(f"  GPU: {profile.gpu_name or 'unknown'}")
+    if profile.has_hardware_data():
+        print(f"  RAM: {_fmt_num(profile.ram_gb)}")
+        print(f"  VRAM: {_fmt_num(profile.vram_gb)}")
+        print(f"  GPU: {profile.gpu_name or 'unknown'}")
+    else:
+        print("  hardware: not described")
     if profile.top_local_models:
         print("  top local models:")
         for model in profile.top_local_models:
@@ -178,9 +181,12 @@ def _print_plan(plan) -> None:
 
     print("Local profile")
     print(f"  source: {plan.local_profile.source}")
-    print(f"  RAM: {_fmt_num(plan.local_profile.ram_gb)}")
-    print(f"  VRAM: {_fmt_num(plan.local_profile.vram_gb)}")
-    print(f"  GPU: {plan.local_profile.gpu_name or 'unknown'}")
+    if plan.local_profile.has_hardware_data():
+        print(f"  RAM: {_fmt_num(plan.local_profile.ram_gb)}")
+        print(f"  VRAM: {_fmt_num(plan.local_profile.vram_gb)}")
+        print(f"  GPU: {plan.local_profile.gpu_name or 'unknown'}")
+    else:
+        print("  hardware: not described")
     if plan.local_profile.warnings:
         for warning in plan.local_profile.warnings:
             print(f"  warning: {warning}")

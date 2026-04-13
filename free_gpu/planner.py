@@ -186,6 +186,9 @@ def evaluate_local_fit(
     vram = local_profile.vram_gb or 0
     blockers: list[str] = []
 
+    if not local_profile.has_hardware_data():
+        return "unknown", blockers
+
     if compute_need.required_vram_gb and vram >= compute_need.required_vram_gb and compute_need.estimated_hours <= 4:
         if request.workload in {"inference", "agent-loop", "batch-eval"}:
             return "good-local", blockers
@@ -233,6 +236,8 @@ def summarize_plan(
     local_profile: LocalCapabilityProfile,
     compute_need: ComputeNeed,
 ) -> str:
+    if not local_profile.has_hardware_data():
+        return f"Local hardware was not described, so the planner is using provider data only to build a {compute_need.lane} workflow."
     if request.workload == "inference" and local_verdict == "good-local":
         return f"Local inference looks viable. Keep {compute_need.lane} providers ready as overflow when the task outgrows local capacity."
     if local_verdict == "cloud-assisted":

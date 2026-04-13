@@ -226,6 +226,12 @@ If `llmfit` is installed, `free-gpu` will try to use:
 
 The adapter uses structured JSON output rather than scraping terminal text. If `llmfit` is missing or parsing fails, `free-gpu` continues in provider-first mode and reports what it could not infer.
 
+In that provider-first mode:
+
+- the planner still ranks providers and builds workflows normally
+- local machine characteristics are simply left undescribed
+- the result focuses on provider logic rather than pretending the local machine is inadequate
+
 ## MCP server
 
 Run:

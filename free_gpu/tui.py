@@ -260,6 +260,12 @@ class FreeGpuApp(App):
 
     def _system_bar_text(self, profile: LocalCapabilityProfile) -> str:
         models = ", ".join(model.name.split("/")[-1] for model in profile.top_local_models[:3]) or "none"
+        if not profile.has_hardware_data():
+            return (
+                f"[b]free-gpu[/b]\n"
+                f"Mode: provider-first  |  llmfit: {'yes' if profile.llmfit_available else 'no'}\n"
+                f"Top local fits: {models}"
+            )
         return (
             f"[b]free-gpu[/b]\n"
             f"CPU/RAM source: {profile.source}  |  "

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import subprocess
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from free_gpu.cli import build_parser
 from free_gpu.data import load_providers
 from free_gpu.http_app import create_http_app
+from free_gpu.llmfit_adapter import _run_llmfit_system, load_local_profile
 from free_gpu.models import LocalCapabilityProfile, WorkloadRequest
 from free_gpu.planner import assess_compute_need, build_plan, infer_model_size, rank_providers
 
@@ -87,6 +90,24 @@ class PlannerTests(unittest.TestCase):
         with TestClient(create_http_app(), base_url="https://free-gpu.vercel.app") as client:
             response = client.get("/mcp")
             self.assertEqual(response.status_code, 406)
+
+    def test_llmfit_timeout_returns_warning(self) -> None:
+        with patch("free_gpu.llmfit_adapter.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["llmfit"], timeout=15)):
+            payload, warning = _run_llmfit_system("llmfit")
+        self.assertIsNone(payload)
+        self.assertIsNotNone(warning)
+        self.assertIn("Could not read llmfit system output", warning)
+
+    def test_missing_llmfit_keeps_provider_first_mode(self) -> None:
+        with patch("free_gpu.llmfit_adapter.resolve_llmfit_executable", return_value=None):
+            profile = load_local_profile()
+        self.assertEqual(profile.source, "provider-first")
+        self.assertFalse(profile.has_hardware_data())
+
+        request = WorkloadRequest(workload="inference", budget="free")
+        plan = build_plan(request, profile, self.providers)
+        self.assertEqual(plan.local_verdict, "unknown")
+        self.assertIn("provider data only", plan.summary)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,9 @@ class LocalCapabilityProfile:
     top_local_models: list[LocalModelMatch] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
+    def has_hardware_data(self) -> bool:
+        return self.ram_gb is not None or self.vram_gb is not None or self.gpu_name is not None
+
     def to_dict(self) -> dict:
         return {
             "source": self.source,
