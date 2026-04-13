@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -96,12 +97,64 @@ class PlannerTests(unittest.TestCase):
         mcp = create_mcp(host="127.0.0.1")
         tool_names = {tool.name for tool in mcp._tool_manager.list_tools()}
         resource_uris = {str(resource.uri) for resource in mcp._resource_manager.list_resources()}
+        prompt_names = {prompt.name for prompt in asyncio.run(mcp.list_prompts())}
 
         self.assertSetEqual(
             tool_names,
             {"plan_provider_workflow", "rank_providers_for_task", "assess_task_compute"},
         )
-        self.assertSetEqual(resource_uris, {"providers://snapshot"})
+        self.assertSetEqual(resource_uris, {"providers://snapshot", "guide://tool-selection"})
+        self.assertSetEqual(prompt_names, {"choose_free_gpu_tool"})
+
+    def test_mcp_tool_schemas_expose_enums_and_descriptions(self) -> None:
+        mcp = create_mcp(host="127.0.0.1")
+        tools = {tool.name: tool for tool in asyncio.run(mcp.list_tools())}
+
+        plan_schema = tools["plan_provider_workflow"].inputSchema
+        budget_schema = plan_schema["properties"]["budget"]
+        deadline_schema = plan_schema["properties"]["deadline"]
+        workload_schema = plan_schema["properties"]["workload"]
+
+        self.assertIn("any, free, under-25, grant", budget_schema["description"])
+        self.assertIn("flexible", deadline_schema["description"])
+        self.assertIn("urgent", deadline_schema["description"])
+        self.assertIn("normalized automatically", workload_schema["description"])
+
+    def test_mcp_resource_and_prompt_offer_client_guidance(self) -> None:
+        mcp = create_mcp(host="127.0.0.1")
+        resource = asyncio.run(mcp.read_resource("guide://tool-selection"))
+        prompt = asyncio.run(
+            mcp.get_prompt("choose_free_gpu_tool", {"user_goal": "Find a short list of free APIs for an agent run"})
+        )
+
+        self.assertEqual(resource[0].mime_type, "application/json")
+        self.assertIn("canonical_workloads", resource[0].content)
+        self.assertIn("Do not mention internal fallback reasoning", prompt.messages[0].content.text)
+
+    def test_plan_provider_workflow_returns_canonical_request_metadata(self) -> None:
+        mcp = create_mcp(host="127.0.0.1")
+        _, payload = asyncio.run(
+            mcp.call_tool(
+                "plan_provider_workflow",
+                {
+                    "workload": "agent run",
+                    "budget": "cheap",
+                    "deadline": "asap",
+                    "task_hours": 0,
+                    "parallel_jobs": 0,
+                    "limit": 999,
+                },
+            )
+        )
+
+        self.assertEqual(payload["canonical_request"]["workload"], "agent-loop")
+        self.assertEqual(payload["canonical_request"]["budget"], "under-25")
+        self.assertEqual(payload["canonical_request"]["deadline"], "urgent")
+        self.assertEqual(payload["canonical_request"]["task_hours"], 1.0)
+        self.assertEqual(payload["canonical_request"]["parallel_jobs"], 1)
+        self.assertEqual(payload["canonical_request"]["limit"], 10)
+        self.assertEqual(payload["client_guidance"]["tool"], "plan_provider_workflow")
+        self.assertTrue(payload["normalization"]["workload_changed"])
 
     def test_build_request_normalizes_common_workload_aliases(self) -> None:
         cases = {
@@ -128,6 +181,26 @@ class PlannerTests(unittest.TestCase):
                     limit=5,
                 )
                 self.assertEqual(request.workload, expected)
+
+    def test_build_request_normalizes_budget_and_deadline_aliases(self) -> None:
+        request = _build_request(
+            workload="inference",
+            model=None,
+            params_b=None,
+            budget="cheap",
+            task_hours=0,
+            min_vram_gb=None,
+            parallel_jobs=0,
+            requires_api=False,
+            prefer_local=True,
+            deadline="asap",
+            limit=999,
+        )
+        self.assertEqual(request.budget, "under-25")
+        self.assertEqual(request.deadline, "urgent")
+        self.assertEqual(request.task_hours, 1.0)
+        self.assertEqual(request.parallel_jobs, 1)
+        self.assertEqual(request.limit, 10)
 
     def test_llmfit_timeout_returns_warning(self) -> None:
         with patch("free_gpu.llmfit_adapter.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["llmfit"], timeout=15)):
