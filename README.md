@@ -132,6 +132,9 @@ Best when you want your coding agent to talk to `free-gpu` on your own machine o
 free-gpu-mcp
 ```
 
+Use the installed `free-gpu-mcp` entrypoint for local MCP clients.
+That is the recommended command to register with clients such as Codex, Claude Code, Cursor, and VS Code.
+
 Conceptual client config:
 
 ```json
@@ -155,7 +158,7 @@ The main integration question is whether your client supports:
 
 #### Codex
 
-Codex supports MCP servers in the CLI and IDE extension through shared configuration.
+Codex supports MCP servers through the shared Codex configuration used by the CLI and desktop surfaces.
 
 Hosted MCP:
 
@@ -171,7 +174,16 @@ If you prefer config files, add the server to `~/.codex/config.toml`:
 url = "https://free-gpu.vercel.app/mcp"
 ```
 
-If you are using a local `free-gpu-mcp` process instead of the hosted endpoint, configure the same server name in Codex as a command-based MCP server.
+Local MCP:
+
+```bash
+codex mcp add free-gpu-local -- free-gpu-mcp
+codex mcp list
+```
+
+If you use Codex Desktop, add the server once with `codex mcp add ...` and then restart the app so it picks up the same shared Codex MCP configuration.
+
+Use the `free-gpu-mcp` command for the local Codex server registration. In practice this is more reliable than launching the module directly with `python -m free_gpu.mcp_server`.
 
 #### Claude Code
 
@@ -366,6 +378,11 @@ The MCP server exposes tools for compute-aware planning, including:
 It also exposes a small dataset summary resource:
 
 - `providers://snapshot`
+- `guide://tool-selection`
+
+And a prompt to help clients choose the right tool and canonical arguments:
+
+- `choose_free_gpu_tool`
 
 ### What the MCP is for
 
