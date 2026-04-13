@@ -266,6 +266,56 @@
     </section>
 
     <section class="section">
+      <h2>Quick start</h2>
+      <p>Everything starts with <code>pip install free-gpu</code>. From there, users can pick the surface that fits their workflow.</p>
+      <div class="cards">
+        <article class="card">
+          <div class="pill">TUI</div>
+          <h3>Interactive local planner</h3>
+          <p>Best when you want filters, provider browsing, and workflow summaries in a Textual interface.</p>
+          <pre>pip install free-gpu
+free-gpu ui</pre>
+        </article>
+        <article class="card">
+          <div class="pill">MCP remoto</div>
+          <h3>Hosted HTTP endpoint</h3>
+          <p>Best when your MCP client supports remote HTTP MCP and you do not want to run the server locally.</p>
+          <pre>https://free-gpu.vercel.app/mcp</pre>
+        </article>
+        <article class="card">
+          <div class="pill">MCP locale</div>
+          <h3>Local stdio server</h3>
+          <p>Best when your coding agent launches local MCP servers directly from your machine.</p>
+          <pre>pip install free-gpu
+free-gpu-mcp</pre>
+        </article>
+      </div>
+      <div class="hero-grid" style="margin-top: 16px;">
+        <div class="panel">
+          <h2>Terminal view</h2>
+          <p>Best when you want direct terminal commands, JSON output, or a scriptable planning workflow.</p>
+          <pre>pip install free-gpu
+free-gpu local
+free-gpu providers --workload inference --budget free
+free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16</pre>
+        </div>
+        <div class="panel">
+          <h2>One install, four entry points</h2>
+          <p>
+            The product now has a clear ladder of surfaces: a visual TUI, a hosted MCP endpoint, a local MCP server, and direct terminal commands.
+            Users do not need to clone the repository to access any of them.
+          </p>
+          <ul>
+            <li><strong>TUI</strong> for browsing and comparing interactively.</li>
+            <li><strong>MCP remoto</strong> for compatible HTTP-capable agent clients.</li>
+            <li><strong>MCP locale</strong> for agent setups that launch local stdio tools.</li>
+            <li><strong>Terminal view</strong> for command-line and scripting workflows.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
       <h2>Example agent use</h2>
       <div class="cards">
         <article class="card">
@@ -296,7 +346,7 @@
             That keeps the project free for the maintainer while still making it usable from MCP-capable coding agents.
           </p>
           <ul>
-            <li>Install <code>free-gpu</code> and the MCP extra locally.</li>
+            <li>Install <code>free-gpu</code> locally with a normal <code>pip install</code>.</li>
             <li>Run <code>free-gpu-mcp</code> on your machine.</li>
             <li>Connect your coding agent to that local MCP server.</li>
             <li>Let the agent ask for workflow plans, provider rankings, and compute-lane assessment.</li>

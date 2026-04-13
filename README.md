@@ -98,6 +98,62 @@ This repository also supports an optional hosted HTTP deployment. If you deploy 
 python -m pip install free-gpu
 ```
 
+## Quick Start
+
+All user-facing modes start from the same install:
+
+```bash
+python -m pip install free-gpu
+```
+
+### TUI
+
+Best when you want an interactive local browser for provider lanes, filters, and workflow summaries.
+
+```bash
+free-gpu ui
+```
+
+### MCP remoto
+
+Best when your MCP client supports remote HTTP MCP and you do not want to run the server yourself.
+
+Endpoint:
+
+```text
+https://free-gpu.vercel.app/mcp
+```
+
+### MCP locale
+
+Best when you want your coding agent to talk to `free-gpu` on your own machine over stdio.
+
+```bash
+free-gpu-mcp
+```
+
+Conceptual client config:
+
+```json
+{
+  "mcpServers": {
+    "free-gpu": {
+      "command": "free-gpu-mcp"
+    }
+  }
+}
+```
+
+### Terminal view
+
+Best when you want direct terminal commands and scriptable output.
+
+```bash
+free-gpu local
+free-gpu providers --workload inference --budget free
+free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16
+```
+
 For local development from the repository:
 
 ```bash
@@ -292,7 +348,9 @@ python -m build
 python -m twine check dist/*
 ```
 
-To publish to PyPI once you have a token for the `free-gpu` project:
+The repository also includes a GitHub Actions Trusted Publishing workflow for PyPI releases.
+
+To publish manually with Twine as a fallback:
 
 ```bash
 python -m twine upload dist/*
