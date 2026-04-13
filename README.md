@@ -114,7 +114,7 @@ Best when you want an interactive local browser for provider lanes, filters, and
 free-gpu ui
 ```
 
-### MCP
+### Hosted MCP
 
 Best when your MCP client supports remote HTTP MCP and you do not want to run the server yourself.
 
@@ -143,6 +143,123 @@ Conceptual client config:
   }
 }
 ```
+
+### Major MCP clients
+
+The main integration question is whether your client supports:
+
+- remote HTTP MCP, using `https://free-gpu.vercel.app/mcp`
+- local stdio MCP, using the `free-gpu-mcp` command
+
+`free-gpu` supports both. The right setup depends on the client.
+
+#### Codex
+
+Codex supports MCP servers in the CLI and IDE extension through shared configuration.
+
+Hosted MCP:
+
+```bash
+codex mcp add freeGpu --url https://free-gpu.vercel.app/mcp
+codex mcp list
+```
+
+If you prefer config files, add the server to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.freeGpu]
+url = "https://free-gpu.vercel.app/mcp"
+```
+
+If you are using a local `free-gpu-mcp` process instead of the hosted endpoint, configure the same server name in Codex as a command-based MCP server.
+
+#### Claude Code
+
+Claude Code supports both remote HTTP MCP and local stdio MCP.
+
+Hosted MCP:
+
+```bash
+claude mcp add --transport http free-gpu https://free-gpu.vercel.app/mcp
+claude mcp list
+```
+
+Local MCP:
+
+```bash
+claude mcp add --transport stdio free-gpu -- free-gpu-mcp
+claude mcp list
+```
+
+If you want the configuration shared with your team, use project scope so Claude Code writes a `.mcp.json` file in the repo:
+
+```bash
+claude mcp add --transport http --scope project free-gpu https://free-gpu.vercel.app/mcp
+```
+
+#### Cursor
+
+Cursor supports both hosted MCP servers and local stdio servers through `mcp.json`.
+
+Project-specific config goes in `.cursor/mcp.json`. Global config goes in `~/.cursor/mcp.json`.
+
+Hosted MCP:
+
+```json
+{
+  "mcpServers": {
+    "free-gpu": {
+      "url": "https://free-gpu.vercel.app/mcp"
+    }
+  }
+}
+```
+
+Local MCP:
+
+```json
+{
+  "mcpServers": {
+    "free-gpu": {
+      "command": "free-gpu-mcp"
+    }
+  }
+}
+```
+
+After adding the config, restart Cursor if needed and make sure the server is enabled in the MCP tools list.
+
+#### VS Code
+
+VS Code MCP support uses `mcp.json`. Workspace config lives in `.vscode/mcp.json`.
+
+Hosted MCP:
+
+```json
+{
+  "servers": {
+    "freeGpu": {
+      "type": "http",
+      "url": "https://free-gpu.vercel.app/mcp"
+    }
+  }
+}
+```
+
+Local MCP:
+
+```json
+{
+  "servers": {
+    "freeGpu": {
+      "type": "stdio",
+      "command": "free-gpu-mcp"
+    }
+  }
+}
+```
+
+Open Copilot Chat in Agent mode, then enable the server in the tools picker if VS Code prompts you to trust or start it.
 
 ### Terminal view
 
@@ -272,7 +389,7 @@ If your coding agent supports local MCP servers over stdio, the setup is concept
 }
 ```
 
-The exact config file depends on the agent, but the idea is the same: point the client at the local `free-gpu-mcp` command.
+The exact config file depends on the agent, but the idea is the same: point the client at the local `free-gpu-mcp` command. For common clients, use the client-specific examples above.
 
 ### Hosted HTTP MCP on Vercel
 
@@ -291,7 +408,7 @@ That means an MCP-capable client that supports remote HTTP MCP can connect to:
 https://free-gpu.vercel.app/mcp
 ```
 
-If you open `/mcp` in a browser, it may return a protocol-level error such as `406 Not Acceptable`. That is expected: the route is meant for MCP clients, not normal browser navigation.
+If you open `/mcp` in a browser, it may return a protocol-level error such as `406 Not Acceptable`. That is expected: the route is meant for MCP clients, not normal browser navigation. A normal page load does not send the MCP transport headers that the endpoint expects.
 
 Example MCP-style request shape:
 
