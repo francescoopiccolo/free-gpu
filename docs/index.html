@@ -142,7 +142,7 @@
     }
 
     .hero-grid {
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       margin-top: 28px;
     }
 
@@ -179,6 +179,10 @@
 
     .section {
       margin-top: 24px;
+    }
+
+    .section > .panel:first-of-type {
+      margin-top: 16px;
     }
 
     .cards,
@@ -308,80 +312,61 @@ free-gpu ui</pre>
 free-gpu-mcp</pre>
         </article>
       </div>
-      <div class="hero-grid" style="margin-top: 16px;">
-        <div class="panel">
-          <h2>Terminal view</h2>
-          <p>For shell-first workflows, JSON output, and scripting.</p>
-          <pre>pip install free-gpu
-free-gpu local
+      <article class="panel">
+        <h2>CLI examples</h2>
+        <p>Use direct commands when you do not need MCP.</p>
+        <pre>pip install free-gpu
 free-gpu providers --workload inference --budget free
-free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16</pre>
-        </div>
-        <div class="panel">
-          <h2>One install, four entry points</h2>
-          <p>You do not need to clone the repo.</p>
-          <ul class="mini-list">
-            <li><strong>TUI</strong> for interactive browsing.</li>
-            <li><strong>Hosted MCP</strong> for remote agent clients.</li>
-            <li><strong>Local MCP</strong> for stdio-based agents.</li>
-            <li><strong>CLI</strong> for direct terminal use.</li>
-          </ul>
-        </div>
-      </div>
+free-gpu plan --workload agent-loop --budget under-25 --task-hours 3 --parallel-jobs 4 --requires-api</pre>
+      </article>
     </section>
 
     <section class="section">
-      <h2>Agent flow</h2>
+      <h2>What it does</h2>
       <div class="cards">
         <article class="card">
-          <div class="pill">Example</div>
-          <h3>Ask a real task question</h3>
-          <p>"I need to fine-tune an 8B model for about 6 hours and stay near free."</p>
+          <div class="pill">Assess</div>
+          <h3>Estimate the compute lane</h3>
+          <p>Figure out whether a task looks like a burst, session, heavy, or grant-scale job.</p>
         </article>
         <article class="card">
-          <div class="pill">MCP call</div>
-          <h3>The agent calls the planner</h3>
-          <p>The agent sends workload, hours, VRAM target, and budget lane to <code>plan_provider_workflow</code>.</p>
+          <div class="pill">Rank</div>
+          <h3>Find realistic providers</h3>
+          <p>Rank free tiers, cheap credits, and grant-style programs for the actual workload.</p>
         </article>
         <article class="card">
-          <div class="pill">Result</div>
-          <h3>The user gets a path</h3>
-          <p>The result includes local vs remote guidance, a short workflow, and realistic provider options.</p>
+          <div class="pill">Plan</div>
+          <h3>Build a workflow</h3>
+          <p>Split the work between local and remote stages instead of treating every task the same way.</p>
         </article>
       </div>
     </section>
 
     <section class="section">
-      <h2>How the MCP works</h2>
+      <h2>MCP setup</h2>
       <div class="hero-grid">
         <div class="panel">
-          <h2>Two deployment modes</h2>
+          <h2>Hosted MCP</h2>
           <div class="stack">
           <p>
-            <strong>Hosted MCP:</strong> connect directly to <code>https://free-gpu.vercel.app/mcp</code>.
+            Use this when your client supports remote HTTP MCP and you want the simplest setup.
           </p>
-          <p>
-            <strong>Local MCP:</strong> install <code>free-gpu</code>, run <code>free-gpu-mcp</code>, and let your client launch it over stdio.
-          </p>
-          <p>
-            GitHub Pages hosts the docs only. The planner itself runs either as a local MCP tool or as the hosted MCP endpoint on Vercel.
-          </p>
+          <pre>https://free-gpu.vercel.app/mcp</pre>
+          <p>Best for Codex, Claude Code, Cursor, or any MCP client that can call a remote endpoint.</p>
           </div>
         </div>
         <div class="panel">
-          <h2>Generic agent config</h2>
-          <pre>{
-  "mcpServers": {
-    "free-gpu": {
-      "command": "free-gpu-mcp"
-    }
-  }
-}</pre>
-          <p class="fine">
-            Client config changes from tool to tool, but the local pattern is always the same: launch <code>free-gpu-mcp</code> and talk to it over stdio.
-          </p>
+          <h2>Local MCP</h2>
+          <p>Use this when your client launches stdio MCP tools on your machine.</p>
+          <pre>pip install free-gpu
+free-gpu-mcp</pre>
+          <p class="fine">For Codex, the reliable local registration is <code>codex mcp add free-gpu-local -- free-gpu-mcp</code>.</p>
         </div>
       </div>
+      <article class="panel">
+        <h2>Important note</h2>
+        <p>GitHub Pages hosts the docs only. The planner itself runs either as a local MCP tool or as the hosted MCP endpoint on Vercel.</p>
+      </article>
     </section>
 
     <section class="section">
@@ -402,30 +387,6 @@ free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --
           <h3>Heavy tasks</h3>
           <p>When VRAM and runtime grow, the planner shifts toward allocations, programs, and grants.</p>
         </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="hero-grid">
-        <div class="panel">
-          <h2>How the workflow planner thinks</h2>
-          <p>The planner estimates a compute lane from workload, model size, VRAM, duration, and parallelism.</p>
-          <ul class="mini-list">
-            <li><strong>Burst</strong> for short runs and quick inference.</li>
-            <li><strong>Session</strong> for longer dev sessions and eval loops.</li>
-            <li><strong>Heavy</strong> for bigger VRAM or sustained work.</li>
-            <li><strong>Grant-scale</strong> for tasks that need a formal support path.</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h2>What ships in the repo</h2>
-          <ul class="mini-list">
-            <li>CLI and Textual TUI for provider planning.</li>
-            <li>CSV-backed provider dataset and scoring heuristics.</li>
-            <li>MCP server with planning, ranking, and compute tools.</li>
-            <li>Hosted HTTP entrypoint for Vercel.</li>
-          </ul>
-        </div>
       </div>
     </section>
 
