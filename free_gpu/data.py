@@ -6,7 +6,7 @@ from pathlib import Path
 from .models import ProviderRecord
 
 
-CSV_PATH = Path(__file__).resolve().parent.parent / "gpu_compute_database - Database.csv"
+CSV_PATH = Path(__file__).resolve().parent / "gpu_compute_database.csv"
 
 
 def load_providers(path: Path | None = None) -> list[ProviderRecord]:

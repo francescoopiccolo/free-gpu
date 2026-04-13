@@ -20,7 +20,7 @@ The point is not to clone `llmfit`. The point is to use `llmfit` as the local-fi
 
 ## What the repo includes
 
-- The original provider dataset in [`gpu_compute_database - Database.csv`](./gpu_compute_database%20-%20Database.csv)
+- The original provider dataset in [`free_gpu/gpu_compute_database.csv`](./free_gpu/gpu_compute_database.csv)
 - A Python CLI for provider ranking and workflow planning
 - A Textual TUI focused on provider selection rather than local model browsing
 - A small MCP server so external agents can ask for provider plans programmatically
