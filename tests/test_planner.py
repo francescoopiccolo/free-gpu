@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import unittest
 
+from fastapi.testclient import TestClient
+
 from free_gpu.cli import build_parser
 from free_gpu.data import load_providers
+from free_gpu.http_app import create_http_app
 from free_gpu.models import LocalCapabilityProfile, WorkloadRequest
 from free_gpu.planner import assess_compute_need, build_plan, infer_model_size, rank_providers
 
@@ -71,6 +74,19 @@ class PlannerTests(unittest.TestCase):
         self.assertNotIn("under-10", budget_action.choices)
         self.assertIn("under-25", budget_action.choices)
         self.assertIn("grant", budget_action.choices)
+
+    def test_http_app_exposes_mcp_metadata(self) -> None:
+        with TestClient(create_http_app(), base_url="https://free-gpu.vercel.app") as client:
+            response = client.get("/")
+            self.assertEqual(response.status_code, 200)
+            payload = response.json()
+            self.assertEqual(payload["name"], "free-gpu")
+            self.assertEqual(payload["mcp_path"], "/mcp")
+
+    def test_http_app_exposes_mcp_endpoint(self) -> None:
+        with TestClient(create_http_app(), base_url="https://free-gpu.vercel.app") as client:
+            response = client.get("/mcp")
+            self.assertEqual(response.status_code, 406)
 
 
 if __name__ == "__main__":
