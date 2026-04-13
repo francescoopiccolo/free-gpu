@@ -10,6 +10,7 @@ from free_gpu.cli import build_parser
 from free_gpu.data import load_providers
 from free_gpu.http_app import create_http_app
 from free_gpu.llmfit_adapter import _run_llmfit_system, load_local_profile
+from free_gpu.mcp_server import create_mcp
 from free_gpu.models import LocalCapabilityProfile, WorkloadRequest
 from free_gpu.planner import assess_compute_need, build_plan, infer_model_size, rank_providers
 
@@ -90,6 +91,17 @@ class PlannerTests(unittest.TestCase):
         with TestClient(create_http_app(), base_url="https://free-gpu.vercel.app") as client:
             response = client.get("/mcp")
             self.assertEqual(response.status_code, 406)
+
+    def test_create_mcp_registers_tools_and_resources(self) -> None:
+        mcp = create_mcp(host="127.0.0.1")
+        tool_names = {tool.name for tool in mcp._tool_manager.list_tools()}
+        resource_uris = {str(resource.uri) for resource in mcp._resource_manager.list_resources()}
+
+        self.assertSetEqual(
+            tool_names,
+            {"plan_provider_workflow", "rank_providers_for_task", "assess_task_compute"},
+        )
+        self.assertSetEqual(resource_uris, {"providers://snapshot"})
 
     def test_llmfit_timeout_returns_warning(self) -> None:
         with patch("free_gpu.llmfit_adapter.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["llmfit"], timeout=15)):

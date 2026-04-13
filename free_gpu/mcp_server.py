@@ -17,7 +17,7 @@ else:
     _MCP_IMPORT_ERROR = None
 
 
-def create_mcp(*, host: str = "127.0.0.1") -> FastMCP:
+def _new_mcp(*, host: str = "127.0.0.1") -> FastMCP:
     if FastMCP is None:  # pragma: no cover - depends on optional extra
         missing = _MCP_IMPORT_ERROR.name if _MCP_IMPORT_ERROR else "mcp"
         raise ModuleNotFoundError(
@@ -89,9 +89,7 @@ def _provider_snapshot() -> dict[str, Any]:
     }
 
 
-if FastMCP is not None:  # pragma: no branch - small import gate
-    mcp = create_mcp()
-
+def _register_handlers(mcp: FastMCP) -> FastMCP:
     @mcp.tool()
     def plan_provider_workflow(
         workload: str,
@@ -194,6 +192,16 @@ if FastMCP is not None:  # pragma: no branch - small import gate
     def providers_snapshot() -> str:
         """Summarize the provider dataset and budget buckets."""
         return json.dumps(_provider_snapshot(), indent=2)
+
+    return mcp
+
+
+def create_mcp(*, host: str = "127.0.0.1") -> FastMCP:
+    return _register_handlers(_new_mcp(host=host))
+
+
+if FastMCP is not None:  # pragma: no branch - small import gate
+    mcp = create_mcp()
 
 
 def main() -> None:
