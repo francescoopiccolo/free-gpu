@@ -114,7 +114,7 @@ Best when you want an interactive local browser for provider lanes, filters, and
 free-gpu ui
 ```
 
-### MCP remoto
+### MCP
 
 Best when your MCP client supports remote HTTP MCP and you do not want to run the server yourself.
 
@@ -124,7 +124,7 @@ Endpoint:
 https://free-gpu.vercel.app/mcp
 ```
 
-### MCP locale
+### Local MCP
 
 Best when you want your coding agent to talk to `free-gpu` on your own machine over stdio.
 
