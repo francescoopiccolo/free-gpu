@@ -17,6 +17,17 @@ else:
     _MCP_IMPORT_ERROR = None
 
 
+def create_mcp(*, host: str = "127.0.0.1") -> FastMCP:
+    if FastMCP is None:  # pragma: no cover - depends on optional extra
+        missing = _MCP_IMPORT_ERROR.name if _MCP_IMPORT_ERROR else "mcp"
+        raise ModuleNotFoundError(
+            f"The MCP server needs the optional dependency '{missing}'. "
+            "Install the published package with `pip install free-gpu` or install locally with `pip install .`."
+        )
+
+    return FastMCP("free-gpu", json_response=True, stateless_http=True, host=host)
+
+
 def _normalize_budget(budget: str) -> str:
     value = budget.strip().lower()
     aliases = {
@@ -79,7 +90,7 @@ def _provider_snapshot() -> dict[str, Any]:
 
 
 if FastMCP is not None:  # pragma: no branch - small import gate
-    mcp = FastMCP("free-gpu", json_response=True)
+    mcp = create_mcp()
 
     @mcp.tool()
     def plan_provider_workflow(
@@ -190,6 +201,6 @@ def main() -> None:
         missing = _MCP_IMPORT_ERROR.name if _MCP_IMPORT_ERROR else "mcp"
         raise SystemExit(
             f"The MCP server needs the optional dependency '{missing}'. "
-            "Install it with `pip install -e .[mcp]`, then run `free-gpu-mcp`."
+            "Install the published package with `pip install free-gpu`, then run `free-gpu-mcp`."
         )
     mcp.run()

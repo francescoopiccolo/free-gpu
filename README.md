@@ -90,16 +90,18 @@ That means:
 - users keep control because the tool runs locally
 - any MCP-capable coding agent can use it if it supports local MCP servers
 
+This repository also supports an optional hosted HTTP deployment. If you deploy it on Vercel, the MCP endpoint is exposed at `/mcp`.
+
 ## Install
 
 ```bash
-python -m pip install -e .
+python -m pip install free-gpu
 ```
 
-To use the MCP server too:
+For local development from the repository:
 
 ```bash
-python -m pip install -e ".[mcp]"
+python -m pip install -e .
 ```
 
 ## CLI
@@ -210,6 +212,25 @@ If your coding agent supports local MCP servers over stdio, the setup is concept
 
 The exact config file depends on the agent, but the idea is the same: point the client at the local `free-gpu-mcp` command.
 
+### Hosted HTTP MCP on Vercel
+
+This repository also includes a Vercel-friendly HTTP entrypoint via [`app.py`](./app.py).
+
+When deployed on Vercel:
+
+- `/` returns a small service description
+- `/health` returns a simple health check
+- `/mcp` is the MCP endpoint to connect to
+- the live hosted endpoint for this repo is `https://free-gpu.vercel.app/mcp`
+
+That means an MCP-capable client that supports remote HTTP MCP can connect to:
+
+```text
+https://free-gpu.vercel.app/mcp
+```
+
+If you open `/mcp` in a browser, it may return a protocol-level error such as `406 Not Acceptable`. That is expected: the route is meant for MCP clients, not normal browser navigation.
+
 Example MCP-style request shape:
 
 ```json
@@ -251,4 +272,28 @@ Run:
 
 ```bash
 python -m unittest tests.test_planner -v
+```
+
+## Packaging and publishing
+
+The project is structured so end users do not need to clone the repository.
+
+After publishing to PyPI, users can install it with:
+
+```bash
+pip install free-gpu
+```
+
+To build distribution artifacts locally:
+
+```bash
+python -m pip install ".[publish]"
+python -m build
+python -m twine check dist/*
+```
+
+To publish to PyPI once you have a token for the `free-gpu` project:
+
+```bash
+python -m twine upload dist/*
 ```

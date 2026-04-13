@@ -4,14 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "free-gpu"
-version = "0.1.0"
+version = "0.1.1"
 description = "Plan local and free-tier GPU workflows around llmfit and curated provider data."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["textual>=0.80,<0.90"]
+dependencies = [
+    "fastapi>=0.115,<1",
+    "mcp>=1.27,<2",
+    "textual>=0.80,<0.90",
+]
+
+authors = [
+    { name = "Francesco Piccolo" }
+]
+
+[project.urls]
+Homepage = "https://francescoopiccolo.github.io/free-gpu/"
+Repository = "https://github.com/francescoopiccolo/free-gpu"
+Documentation = "https://francescoopiccolo.github.io/free-gpu/"
+Issues = "https://github.com/francescoopiccolo/free-gpu/issues"
 
 [project.optional-dependencies]
-mcp = ["mcp"]
+publish = ["build>=1.2", "twine>=5"]
 
 [project.scripts]
 free-gpu = "free_gpu.cli:main"
