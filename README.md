@@ -1,221 +1,94 @@
 # free-gpu
 
-`free-gpu` is a terminal-first planner for free and near-free compute.
+`free-gpu` is a GPU compute planner on top of [`llmfit`](https://www.llmfit.org/).
 
-It is designed to sit on top of [`llmfit`](https://www.llmfit.org/):
+It helps you answer a simple question: what should stay local, and when should you move to free-tier, cheap-credit, or grant-style providers?
 
-- `llmfit` answers: what models fit my local hardware?
-- `free-gpu` answers: given this workload and compute need, which providers should I use, and how should I split work across local plus remote stages?
+PyPI: <https://pypi.org/project/free-gpu/>
 
-The point is not to clone `llmfit`. The point is to use `llmfit` as the local-fit engine, then add provider filtering, role-aware ranking, and workflow planning around free, cheap, and grant-style compute.
+## What it does
 
-## What users actually get
+- Uses `llmfit` as the local-fit layer.
+- Maps a workload to a practical provider lane.
+- Ranks providers for free, under-25, or grant-style paths.
+- Builds stage-aware plans for tasks such as inference, LoRA fine-tuning, and heavier remote jobs.
+- Exposes the planner through a CLI, a TUI, a local MCP server, and a hosted HTTP MCP endpoint.
 
-`free-gpu` helps answer questions like:
+Canonical workloads:
 
-- "I need quick inference for a small coding task. Which free-tier provider is the least painful?"
-- "I need a few hours of GPU time for LoRA fine-tuning. Should I look at credits, trials, or a cloud free tier?"
-- "This task is too heavy for casual free tiers. Which grant or program lane should I think about instead?"
-- "What should stay local, and what should move to remote compute?"
-
-## What the repo includes
-
-- The original provider dataset in [`free_gpu/gpu_compute_database.csv`](./free_gpu/gpu_compute_database.csv)
-- A Python CLI for provider ranking and workflow planning
-- A Textual TUI focused on provider selection rather than local model browsing
-- A small MCP server so external agents can ask for provider plans programmatically
-- A GitHub Pages-ready project page in [`docs/index.html`](./docs/index.html)
-
-## Core product rules
-
-- Role is a ranking lens, not a hard exclusion filter.
-- Budget buckets are semantic UX buckets, not literal accounting truth.
-- Grant-like providers behave like card-required options.
-- The planner should surface the right provider lane for the task instead of treating every task as the same generic ranking problem.
-
-## Provider lanes
-
-`free-gpu` is not only about "free" in the narrow sense. It plans across several practical lanes:
-
-- `free tier`: browser notebooks, starter quotas, short session access
-- `under-25`: credits, trials, starter plans, light paid-but-cheap access
-- `grant`: startup programs, research allocations, application-based access, and other heavier support paths
-
-That matters because different tasks naturally fall into different lanes:
-
-- quick demos and lightweight inference often fit the free-tier lane
-- medium notebook work and moderate fine-tunes often fit the under-25 or credit lane
-- heavier training and long-running work often belong in the grant lane
-
-## Workflow logic
-
-The planner estimates a compute lane from:
-
-- workload
-- model size
-- target VRAM
-- estimated task hours
-- parallel jobs
-- API needs
-
-Then it schedules providers accordingly:
-
-- `burst`: short runs, quick inference, fast-start options
-- `session`: notebook or credit-backed work that lasts longer
-- `heavy`: bigger VRAM or sustained remote compute
-- `grant-scale`: tasks that look more like allocations, programs, or heavy research/startup support
-
-Each workflow step carries its own compute summary, so a multi-stage plan can recommend different provider types for prep, fine-tune, eval, and serving.
-
-## How Pages and MCP fit together
-
-The project has two different surfaces:
-
-- GitHub Pages hosts the public project site and docs
-- the MCP server runs locally on the user's own machine
-
-GitHub Pages cannot run the planner logic or host the Python MCP server. It is only the public website.
-
-The actual MCP workflow is:
-
-1. a user installs `free-gpu`
-2. the user runs `free-gpu-mcp` locally
-3. their coding agent connects to that local MCP server
-4. the agent can call planner tools such as `plan_provider_workflow`
-
-That means:
-
-- no hosting cost for you
-- no central backend to maintain
-- users keep control because the tool runs locally
-- any MCP-capable coding agent can use it if it supports local MCP servers
-
-This repository also supports an optional hosted HTTP deployment. If you deploy it on Vercel, the MCP endpoint is exposed at `/mcp`.
+- `scratch-train`
+- `finetune-lora`
+- `inference`
+- `batch-eval`
+- `agent-loop`
 
 ## Install
 
 ```bash
-python -m pip install free-gpu
+pip install free-gpu
 ```
 
-## Quick Start
-
-All user-facing modes start from the same install:
-
-```bash
-python -m pip install free-gpu
-```
+## Use it
 
 ### TUI
-
-Best when you want an interactive local browser for provider lanes, filters, and workflow summaries.
 
 ```bash
 free-gpu ui
 ```
 
+### CLI
+
+```bash
+free-gpu providers --workload inference --budget free
+free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16
+free-gpu plan --workload scratch-train --budget grant --task-hours 24 --min-vram-gb 40
+```
+
 ### Hosted MCP
-
-Best when your MCP client supports remote HTTP MCP and you do not want to run the server yourself.
-
-Endpoint:
 
 ```text
 https://free-gpu.vercel.app/mcp
 ```
 
-### Local MCP
-
-Best when you want your coding agent to talk to `free-gpu` on your own machine over stdio.
+### Local server
 
 ```bash
 free-gpu-mcp
 ```
 
-Use the installed `free-gpu-mcp` entrypoint for local MCP clients.
-That is the recommended command to register with clients such as Codex, Claude Code, Cursor, and VS Code.
+## Add free-gpu to your MCP client
 
-Conceptual client config:
+### Codex
 
-```json
-{
-  "mcpServers": {
-    "free-gpu": {
-      "command": "free-gpu-mcp"
-    }
-  }
-}
-```
-
-### Major MCP clients
-
-The main integration question is whether your client supports:
-
-- remote HTTP MCP, using `https://free-gpu.vercel.app/mcp`
-- local stdio MCP, using the `free-gpu-mcp` command
-
-`free-gpu` supports both. The right setup depends on the client.
-
-#### Codex
-
-Codex supports MCP servers through the shared Codex configuration used by the CLI and desktop surfaces.
-
-Hosted MCP:
+Hosted:
 
 ```bash
 codex mcp add freeGpu --url https://free-gpu.vercel.app/mcp
-codex mcp list
 ```
 
-If you prefer config files, add the server to `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.freeGpu]
-url = "https://free-gpu.vercel.app/mcp"
-```
-
-Local MCP:
+Local:
 
 ```bash
 codex mcp add free-gpu-local -- free-gpu-mcp
-codex mcp list
 ```
 
-If you use Codex Desktop, add the server once with `codex mcp add ...` and then restart the app so it picks up the same shared Codex MCP configuration.
+### Claude Code
 
-Use the `free-gpu-mcp` command for the local Codex server registration. In practice this is more reliable than launching the module directly with `python -m free_gpu.mcp_server`.
-
-#### Claude Code
-
-Claude Code supports both remote HTTP MCP and local stdio MCP.
-
-Hosted MCP:
+Hosted:
 
 ```bash
 claude mcp add --transport http free-gpu https://free-gpu.vercel.app/mcp
-claude mcp list
 ```
 
-Local MCP:
+Local:
 
 ```bash
 claude mcp add --transport stdio free-gpu -- free-gpu-mcp
-claude mcp list
 ```
 
-If you want the configuration shared with your team, use project scope so Claude Code writes a `.mcp.json` file in the repo:
+### Cursor
 
-```bash
-claude mcp add --transport http --scope project free-gpu https://free-gpu.vercel.app/mcp
-```
-
-#### Cursor
-
-Cursor supports both hosted MCP servers and local stdio servers through `mcp.json`.
-
-Project-specific config goes in `.cursor/mcp.json`. Global config goes in `~/.cursor/mcp.json`.
-
-Hosted MCP:
+Hosted:
 
 ```json
 {
@@ -227,7 +100,7 @@ Hosted MCP:
 }
 ```
 
-Local MCP:
+Local:
 
 ```json
 {
@@ -239,13 +112,9 @@ Local MCP:
 }
 ```
 
-After adding the config, restart Cursor if needed and make sure the server is enabled in the MCP tools list.
+### VS Code
 
-#### VS Code
-
-VS Code MCP support uses `mcp.json`. Workspace config lives in `.vscode/mcp.json`.
-
-Hosted MCP:
+Hosted:
 
 ```json
 {
@@ -258,7 +127,7 @@ Hosted MCP:
 }
 ```
 
-Local MCP:
+Local:
 
 ```json
 {
@@ -271,227 +140,12 @@ Local MCP:
 }
 ```
 
-Open Copilot Chat in Agent mode, then enable the server in the tools picker if VS Code prompts you to trust or start it.
+## Dataset
 
-### Terminal view
+The provider ledger lives in [`free_gpu/gpu_compute_database.csv`](./free_gpu/gpu_compute_database.csv).
 
-Best when you want direct terminal commands and scriptable output.
+## Project links
 
-```bash
-free-gpu local
-free-gpu providers --workload inference --budget free
-free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16
-```
-
-For local development from the repository:
-
-```bash
-python -m pip install -e .
-```
-
-## CLI
-
-### Local profile
-
-```bash
-free-gpu local
-free-gpu local --ram-gb 32 --vram-gb 12
-```
-
-### Provider ranking
-
-```bash
-free-gpu providers --workload inference --budget free
-free-gpu providers --workload agent-loop --budget under-25 --task-hours 3 --parallel-jobs 4 --requires-api
-```
-
-### Workflow planning
-
-```bash
-free-gpu plan --workload inference --model qwen2.5-coder-7b --ram-gb 32 --vram-gb 8
-free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16
-free-gpu plan --workload scratch-train --budget grant --task-hours 24 --min-vram-gb 40
-```
-
-Useful planning flags:
-
-- `--task-hours`
-- `--min-vram-gb`
-- `--parallel-jobs`
-- `--requires-api`
-- `--budget any|free|under-25|grant`
-
-Every command also accepts `--json`.
-
-## Terminal UI
-
-Run:
-
-```bash
-free-gpu ui
-```
-
-The TUI is inspired by `llmfit`'s visual grammar, but it stays focused on provider planning:
-
-- a top system bar with local hardware context from `llmfit`
-- broad provider browsing by default
-- role, workload, budget, and payment filters
-- a central provider table
-- bottom panes for links, recommendation context, and workflow summary
-
-Current budget options in the TUI:
-
-- `Budget Any`
-- `Free`
-- `<25`
-- `Grant`
-
-## llmfit integration
-
-If `llmfit` is installed, `free-gpu` will try to use:
-
-- `llmfit system --json`
-- `llmfit recommend -n N --json`
-
-The adapter uses structured JSON output rather than scraping terminal text. If `llmfit` is missing or parsing fails, `free-gpu` continues in provider-first mode and reports what it could not infer.
-
-In that provider-first mode:
-
-- the planner still ranks providers and builds workflows normally
-- local machine characteristics are simply left undescribed
-- the result focuses on provider logic rather than pretending the local machine is inadequate
-
-## MCP server
-
-Run:
-
-```bash
-free-gpu-mcp
-```
-
-The MCP server exposes tools for compute-aware planning, including:
-
-- `plan_provider_workflow`
-- `rank_providers_for_task`
-- `assess_task_compute`
-
-It also exposes a small dataset summary resource:
-
-- `providers://snapshot`
-- `guide://tool-selection`
-
-And a prompt to help clients choose the right tool and canonical arguments:
-
-- `choose_free_gpu_tool`
-
-### What the MCP is for
-
-The MCP lets an agent ask questions such as:
-
-- "Plan a cheap inference workflow for this task"
-- "Rank providers for a 6-hour fine-tune that needs about 16 GB VRAM"
-- "Does this task look like free-tier, credit-tier, or grant-scale work?"
-
-### Generic local MCP setup
-
-If your coding agent supports local MCP servers over stdio, the setup is conceptually:
-
-```json
-{
-  "mcpServers": {
-    "free-gpu": {
-      "command": "free-gpu-mcp"
-    }
-  }
-}
-```
-
-The exact config file depends on the agent, but the idea is the same: point the client at the local `free-gpu-mcp` command. For common clients, use the client-specific examples above.
-
-### Hosted HTTP MCP on Vercel
-
-This repository also includes a Vercel-friendly HTTP entrypoint via [`app.py`](./app.py).
-
-When deployed on Vercel:
-
-- `/` returns a small service description
-- `/health` returns a simple health check
-- `/mcp` is the MCP endpoint to connect to
-- the live hosted endpoint for this repo is `https://free-gpu.vercel.app/mcp`
-
-That means an MCP-capable client that supports remote HTTP MCP can connect to:
-
-```text
-https://free-gpu.vercel.app/mcp
-```
-
-If you open `/mcp` in a browser, it may return a protocol-level error such as `406 Not Acceptable`. That is expected: the route is meant for MCP clients, not normal browser navigation. A normal page load does not send the MCP transport headers that the endpoint expects.
-
-Example MCP-style request shape:
-
-```json
-{
-  "tool": "plan_provider_workflow",
-  "arguments": {
-    "workload": "agent-loop",
-    "budget": "under-25",
-    "task_hours": 3,
-    "parallel_jobs": 4,
-    "requires_api": true
-  }
-}
-```
-
-Example agent flow:
-
-1. You ask your coding agent: "I need to fine-tune an 8B model for about 6 hours and want to stay near free."
-2. The agent calls `plan_provider_workflow`.
-3. `free-gpu` estimates the compute lane.
-4. The agent gets back a structured plan with:
-   - local vs remote recommendation
-   - stage-by-stage workflow
-   - top providers for that compute need
-   - whether the task fits free tier, cheap credits, or a grant-style path
-
-## GitHub Pages
-
-A project page is included in [`docs/index.html`](./docs/index.html).
-
-On GitHub, enable Pages and point it at:
-
-- Branch: `main`
-- Folder: `/docs`
-
-## Tests
-
-Run:
-
-```bash
-python -m unittest tests.test_planner -v
-```
-
-## Packaging and publishing
-
-The project is structured so end users do not need to clone the repository.
-
-After publishing to PyPI, users can install it with:
-
-```bash
-pip install free-gpu
-```
-
-To build distribution artifacts locally:
-
-```bash
-python -m pip install ".[publish]"
-python -m build
-python -m twine check dist/*
-```
-
-The repository also includes a GitHub Actions Trusted Publishing workflow for PyPI releases.
-
-To publish manually with Twine as a fallback:
-
-```bash
-python -m twine upload dist/*
-```
+- Repository: <https://github.com/francescoopiccolo/free-gpu>
+- PyPI: <https://pypi.org/project/free-gpu/>
+- Hosted MCP: <https://free-gpu.vercel.app/mcp>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>free-gpu | Technical compute planner for free, cheap, and grant-scale GPU lanes</title>
+  <title>free-gpu | GPU compute planner on PyPI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -15,7 +15,6 @@
       --line: rgba(148, 163, 184, 0.18);
       --accent: #5eead4;
       --accent-soft: rgba(94, 234, 212, 0.12);
-      --teal: #22d3ee;
       --navy: #d7e4ff;
       --card: rgba(9, 17, 31, 0.82);
       --shadow: 0 20px 56px rgba(2, 6, 23, 0.4);
@@ -40,6 +39,7 @@
 
     a {
       color: inherit;
+      text-decoration: none;
     }
 
     .page {
@@ -75,7 +75,9 @@
     .eyebrow,
     .pill,
     code,
-    pre {
+    pre,
+    .mini-eyebrow,
+    .stat-label {
       font-family: "IBM Plex Mono", monospace;
     }
 
@@ -95,15 +97,15 @@
 
     h1 {
       margin: 18px 0 14px;
-      font-size: clamp(2.2rem, 5vw, 4.6rem);
-      line-height: 0.94;
-      max-width: 780px;
+      font-size: clamp(2.3rem, 5vw, 4.7rem);
+      line-height: 0.95;
+      max-width: 820px;
     }
 
     .lede {
-      max-width: 760px;
+      max-width: 780px;
       font-size: 1.08rem;
-      line-height: 1.6;
+      line-height: 1.65;
       color: var(--muted);
     }
 
@@ -139,20 +141,25 @@
 
     .hero-grid,
     .cards,
-    .examples,
-    .footer-grid {
+    .footer-grid,
+    .mcp-grid {
       display: grid;
       gap: 16px;
     }
 
-    .hero-grid {
+    .hero-grid,
+    .mcp-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       margin-top: 28px;
     }
 
+    .cards,
+    .footer-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .panel,
     .card,
-    .example,
     .footer-card {
       border: 1px solid var(--line);
       border-radius: 22px;
@@ -160,10 +167,16 @@
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
       min-width: 0;
+      padding: 20px;
     }
 
-    .panel {
-      padding: 20px;
+    .mini-eyebrow {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--accent);
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .panel h2,
@@ -189,18 +202,6 @@
       margin-top: 16px;
     }
 
-    .cards,
-    .examples,
-    .footer-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .card,
-    .example,
-    .footer-card {
-      padding: 20px;
-    }
-
     .pill {
       display: inline-flex;
       padding: 6px 10px;
@@ -214,15 +215,9 @@
     }
 
     .card h3,
-    .example h3,
     .footer-card h3 {
       margin: 14px 0 8px;
       font-size: 1.08rem;
-    }
-
-    ul {
-      padding-left: 18px;
-      margin: 14px 0 0;
     }
 
     pre {
@@ -240,39 +235,14 @@
       overflow-wrap: anywhere;
     }
 
-    .stack {
-      display: grid;
-      gap: 12px;
-    }
-
-    .mini-list {
-      padding-left: 18px;
-      margin: 8px 0 0;
-    }
-
-    .mini-list li + li {
-      margin-top: 6px;
-    }
-
-    .footer-grid {
-      margin-top: 18px;
-    }
-
-    .fine {
-      margin-top: 18px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       gap: 12px;
-      margin-top: 8px;
     }
 
     .stat {
-      padding: 16px;
+      padding: 18px;
       border-radius: 18px;
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.02);
@@ -280,35 +250,29 @@
 
     .stat strong {
       display: block;
-      font-size: 1.6rem;
+      font-size: 2rem;
       line-height: 1;
       color: var(--ink);
     }
 
-    .stat span {
+    .stat-label {
       display: block;
       margin-top: 8px;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
 
-    .panel .mini-eyebrow {
-      display: block;
-      margin-bottom: 10px;
-      color: var(--accent);
-      font-size: 0.76rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .footer-grid {
+      margin-top: 18px;
     }
 
     @media (max-width: 900px) {
       .hero-grid,
       .cards,
-      .examples,
       .footer-grid,
-      .stats {
+      .mcp-grid {
         grid-template-columns: 1fr;
       }
 
@@ -321,11 +285,11 @@
 <body>
   <main class="page">
     <section class="hero">
-      <div class="eyebrow">v0.1.4 stable | technical compute planner</div>
-      <h1>Choose the right GPU lane with signals from the planner, not vibes from a pricing page.</h1>
+      <div class="eyebrow">free-gpu on PyPI | GPU compute planner</div>
+      <h1>Take the most from free-tier workflows for your GPU compute experiments.</h1>
       <p class="lede">
         <strong>free-gpu</strong> sits on top of <strong>llmfit</strong> and maps a workload to a practical path:
-        stay local, burst into a free tier, use cheap credits, or move into a grant-style lane when the compute math stops being casual.
+        know what your hardware is capable of deploying and delegate heavier work to free and near-free providers.
       </p>
       <div class="hero-actions">
         <a class="button primary" href="https://github.com/francescoopiccolo/free-gpu">View repository</a>
@@ -334,19 +298,10 @@
       </div>
       <div class="hero-grid">
         <article class="panel">
-          <span class="mini-eyebrow">Project signals</span>
           <div class="stats">
             <div class="stat">
               <strong>61</strong>
-              <span>provider rows</span>
-            </div>
-            <div class="stat">
-              <strong>5</strong>
-              <span>workload classes</span>
-            </div>
-            <div class="stat">
-              <strong>3</strong>
-              <span>MCP tools</span>
+              <span class="stat-label">providers</span>
             </div>
           </div>
         </article>
@@ -355,11 +310,11 @@
           <pre>{
   "tool": "plan_provider_workflow",
   "arguments": {
-    "workload": "agent-loop",
+    "workload": "finetune-lora",
+    "model": "llama-3.1-8b",
     "budget": "under-25",
-    "task_hours": 3,
-    "parallel_jobs": 4,
-    "requires_api": true
+    "task_hours": 6,
+    "min_vram_gb": 16
   }
 }</pre>
         </article>
@@ -367,96 +322,78 @@
     </section>
 
     <section class="section">
-      <h2>Interfaces</h2>
-      <p>Everything here is static documentation, but the product exposes several technical surfaces.</p>
-      <div class="cards">
+      <h2>Feasible Implementation</h2>
+      <div class="mcp-grid">
         <article class="card">
-          <div class="pill">CLI + TUI</div>
-          <h3>Terminal-first planning</h3>
-          <p>Browse providers in the Textual UI or drive the planner from the terminal when you want scriptable output.</p>
-          <pre>pip install free-gpu
-free-gpu ui
-free-gpu plan --workload finetune-lora --model llama-3.1-8b --budget under-25 --task-hours 6 --min-vram-gb 16</pre>
-        </article>
-        <article class="card">
-          <div class="pill">Hosted MCP</div>
-          <h3>Remote HTTP endpoint</h3>
-          <p>Use this when the client supports remote MCP and you want a no-install path backed by the Vercel deployment.</p>
-          <pre>GET  /health
-POST /mcp
+          <div class="pill">Codex</div>
+          <h3>Add free-gpu to Codex</h3>
+          <pre>codex mcp add freeGpu --url https://free-gpu.vercel.app/mcp
 
-https://free-gpu.vercel.app/mcp</pre>
+codex mcp add free-gpu-local -- free-gpu-mcp</pre>
         </article>
         <article class="card">
-          <div class="pill">Local MCP</div>
-          <h3>Local stdio server</h3>
-          <p>Use this when the client can launch tools directly on the user's machine and you want the planner to stay local.</p>
-          <pre>pip install free-gpu
-codex mcp add free-gpu-local -- free-gpu-mcp
-free-gpu-mcp</pre>
+          <div class="pill">Claude Code</div>
+          <h3>Add free-gpu to Claude Code</h3>
+          <pre>claude mcp add --transport http free-gpu https://free-gpu.vercel.app/mcp
+
+claude mcp add --transport stdio free-gpu -- free-gpu-mcp</pre>
+        </article>
+        <article class="card">
+          <div class="pill">Cursor</div>
+          <h3>Add free-gpu to Cursor</h3>
+          <pre>{
+  "mcpServers": {
+    "free-gpu": {
+      "url": "https://free-gpu.vercel.app/mcp"
+    }
+  }
+}</pre>
+        </article>
+        <article class="card">
+          <div class="pill">VS Code</div>
+          <h3>Add free-gpu to VS Code</h3>
+          <pre>{
+  "servers": {
+    "freeGpu": {
+      "type": "http",
+      "url": "https://free-gpu.vercel.app/mcp"
+    }
+  }
+}</pre>
         </article>
       </div>
+    </section>
+
+    <section class="section">
+      <h2>Run free-gpu</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="pill">TUI - CLI</div>
+          <h3>Start from the terminal</h3>
+          <pre>pip install free-gpu
+free-gpu ui</pre>
+        </article>
+        <article class="card">
+          <div class="pill">HTTP endpoint</div>
+          <h3>Hosted MCP</h3>
+          <pre>https://free-gpu.vercel.app/mcp</pre>
+        </article>
+        <article class="card">
+          <div class="pill">Local server</div>
+          <h3>Run the MCP locally</h3>
+          <pre>free-gpu-mcp</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Canonical workloads</h2>
       <article class="panel">
-        <h2>Static site, dynamic product</h2>
-        <p>GitHub Pages is only the landing page. The actual planner runs as a local CLI/TUI, a local MCP server, or the hosted MCP endpoint on Vercel.</p>
-      </article>
-    </section>
-
-    <section class="section">
-      <h2>Planner model</h2>
-      <div class="cards">
-        <article class="card">
-          <div class="pill">Dataset</div>
-          <h3>Provider ledger, not vague recommendations</h3>
-          <p>The planner works from a curated CSV with provider class, compute notes, card requirements, API support, and source links.</p>
-        </article>
-        <article class="card">
-          <div class="pill">Heuristics</div>
-          <h3>Compute lane classification</h3>
-          <p>Requests get normalized into burst, session, heavy, or grant-scale lanes based on VRAM, runtime, and job fan-out.</p>
-        </article>
-        <article class="card">
-          <div class="pill">Workflow</div>
-          <h3>Stage-aware planning</h3>
-          <p>The output is not only a ranking. The planner decides what stays local and what should move remote for each stage.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>Current heuristics</h2>
-      <div class="hero-grid">
-        <div class="panel">
-          <h2>Lane thresholds</h2>
-          <div class="stack">
-            <p>These are the kinds of rules that make the landing page feel technical in a good way: they expose how the product reasons.</p>
-            <pre>grant-scale  => scratch-train
-              or VRAM >= 32 GB
-              or task_hours >= 18
-
-heavy        => VRAM >= 20 GB
-              or task_hours >= 8
-              or parallel_jobs >= 4
-
-session      => VRAM >= 12 GB
-              or task_hours >= 3
-              or parallel_jobs >= 2</pre>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Canonical workloads</h2>
-          <p>The request surface stays small and explicit, which is great material for a static GitHub Pages overview.</p>
-          <pre>scratch-train
+        <pre>scratch-train
 finetune-lora
 inference
 batch-eval
 agent-loop</pre>
-          <p class="fine">Budget lanes stay equally compact: <code>free</code>, <code>under-25</code>, <code>grant</code>, and <code>any</code>.</p>
-        </div>
-      </div>
-      <article class="panel">
-        <h2>Why this works well on GitHub Pages</h2>
-        <p>The content is explanatory and code-centric, so it fits a static site perfectly. You do not need server rendering to show heuristics, examples, datasets, or setup instructions.</p>
       </article>
     </section>
 
@@ -476,28 +413,27 @@ agent-loop</pre>
         <article class="card">
           <div class="pill">Grant-scale</div>
           <h3>When the compute stops being casual</h3>
-          <p>For larger VRAM and longer jobs, the planner shifts toward programs, allocations, and grant-style infrastructure instead of pretending a notebook queue is enough.</p>
+          <p>For larger VRAM and longer jobs, the planner shifts toward programs, allocations, and grant-style infrastructure.</p>
         </article>
       </div>
     </section>
 
     <section class="section">
-      <h2>Deployment split</h2>
       <div class="footer-grid">
         <article class="footer-card">
-          <h3>GitHub Pages</h3>
-          <p>Keep this for the public landing page and docs. It is static, versioned with the repo, and already aligned with the project's documentation role.</p>
-          <a class="button secondary" href="https://francescoopiccolo.github.io/free-gpu/">Open Pages</a>
-        </article>
-        <article class="footer-card">
-          <h3>Vercel</h3>
-          <p>Keep Vercel for the hosted HTTP MCP endpoint. That is the dynamic surface that benefits from server-side deployment and previews.</p>
-          <a class="button secondary" href="https://free-gpu.vercel.app/mcp">Open MCP endpoint</a>
-        </article>
-        <article class="footer-card">
-          <h3>Repo + dataset</h3>
-          <p>The source code, README, and provider data remain the anchor for the whole project and should keep driving the site copy.</p>
+          <h3>Repo</h3>
+          <p>Source code, README, and release history.</p>
           <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu">Open repo</a>
+        </article>
+        <article class="footer-card">
+          <h3>PyPI</h3>
+          <p>Install the published package directly from PyPI.</p>
+          <a class="button secondary" href="https://pypi.org/project/free-gpu/">Open package</a>
+        </article>
+        <article class="footer-card">
+          <h3>Dataset</h3>
+          <p>Browse the provider ledger used by the planner.</p>
+          <a class="button secondary" href="https://github.com/francescoopiccolo/free-gpu/blob/main/free_gpu/gpu_compute_database.csv">Open dataset</a>
         </article>
       </div>
     </section>
