@@ -248,6 +248,10 @@
       background: rgba(255, 255, 255, 0.02);
     }
 
+    .install-snippet {
+      margin-bottom: 14px;
+    }
+
     .stat strong {
       display: block;
       font-size: 2rem;
@@ -286,10 +290,10 @@
   <main class="page">
     <section class="hero">
       <div class="eyebrow">free-gpu on PyPI | GPU compute planner</div>
-      <h1>Take the most from free-tier workflows for your GPU compute experiments.</h1>
+      <h1>Tune your model. Find the right GPU path for each run.</h1>
       <p class="lede">
-        <strong>free-gpu</strong> sits on top of <strong>llmfit</strong> and maps a workload to a practical path:
-        know what your hardware is capable of deploying and delegate heavier work to free and near-free providers.
+        <strong>free-gpu</strong> sits on top of <strong>llmfit</strong> to show what your hardware can run locally
+        and when it makes sense to move heavier work to free and near-free providers.
       </p>
       <div class="hero-actions">
         <a class="button primary" href="https://github.com/francescoopiccolo/free-gpu">View repository</a>
@@ -298,6 +302,7 @@
       </div>
       <div class="hero-grid">
         <article class="panel">
+          <pre class="install-snippet">pip install free-gpu</pre>
           <div class="stats">
             <div class="stat">
               <strong>61</strong>
