@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/readme/free-gpu-schema.svg" alt="free-gpu workflow schema" width="70%">
+  <img src="assets/readme/free-gpu-schema.svg" alt="free-gpu workflow schema" width="30%">
 </p>
 
 <h1 align="center">free-gpu</h1>
