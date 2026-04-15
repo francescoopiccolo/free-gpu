@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/readme/free-gpu-schema.svg" alt="free-gpu workflow schema" width="30%">
+  <img src="assets/readme/free-gpu-logo.svg" alt="free-gpu logo" width="220">
 </p>
 
 <h1 align="center">free-gpu</h1>
@@ -170,7 +170,7 @@ The LoRA fine-tuning example above is the core workflow: describe the model, def
 ## How it works
 
 <p align="center">
-  <img src="assets/readme/free-gpu-banner.svg" alt="free-gpu banner" width="100%">
+  <img src="assets/readme/free-gpu-schema.svg" alt="free-gpu workflow schema" width="70%">
 </p>
 
 1. Start with the workload shape: model, hours, VRAM target, and budget lane.
