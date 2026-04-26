@@ -47,6 +47,28 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(ranked)
         self.assertTrue(any("api" in provider.reason.lower() for provider in ranked[:3]))
 
+    def test_lightning_ai_free_tier_lists_high_memory_gpus(self) -> None:
+        lightning = next(provider for provider in self.providers if provider.service == "Lightning AI Studio")
+
+        self.assertIn("H200", lightning.compute)
+        self.assertIn("141 GB", lightning.vram)
+        self.assertIn("80 GPU hours/month", lightning.max_hours)
+        self.assertIn("H200 3h", lightning.max_hours)
+        self.assertEqual(lightning.credit_card_required, "No")
+
+    def test_audited_provider_rows_keep_current_credit_details(self) -> None:
+        providers = {provider.service: provider for provider in self.providers}
+
+        self.assertIn("B200", providers["Modal Starter"].compute)
+        self.assertIn("$30/month", providers["Modal Starter"].max_hours)
+        self.assertIn("25 cloud credit hours", providers["AMD Developer Cloud"].max_hours)
+        self.assertIn("$200 credit valid for 1 year", providers["DigitalOcean GitHub Students"].max_hours)
+        self.assertIn("H200", providers["DigitalOcean Free Credit (new account)"].compute)
+        self.assertIn("$100 credit for 12 months", providers["Azure for Students"].max_hours)
+        self.assertIn("$200 credit for 30 days", providers["Microsoft Azure Free Account"].max_hours)
+        self.assertIn("8 GPUs for a full year", providers["Nebius Research Credits Program"].max_hours)
+        self.assertIn("$1,000 Starter Tier credits", providers["RunPod Startup Program"].max_hours)
+
     def test_compute_need_uses_grant_scale_for_heavy_training(self) -> None:
         request = WorkloadRequest(
             workload="scratch-train",
